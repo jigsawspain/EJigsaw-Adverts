@@ -29,12 +29,26 @@ if ($_SESSION['key'] != $_POST['key'] or $_POST['key']=="")
 	require('../../init.inc.php');
 	if (!isset($_POST['id']))
 	{
-	 $query = "INSERT INTO {$EJ_mysql->prefix}module_EJ_adverts SET EJ_advertTitle='".urldecode($_POST['title'])."', EJ_advertTag='".urldecode($_POST['tag'])."', EJ_advertText='".str_replace(array("\n", "<br>", "<br/>", "£"),array("<br />","<br />","<br />", "&pound;"),to_utf8(urldecode($_POST['desc'])))."', EJ_advertCat = {$_POST['cat']}, EJ_advertDate = '".date("Y-m-d", strtotime($_POST['date']))."', EJ_advertImages='".$_POST['image']."', EJ_advertHidden = ".$_POST['hidden'].", EJ_advertPoster = '".$_POST['poster']."', EJ_advertLoc = '".$_POST['locs']."', EJ_advertAttributes = '".$_POST['atts']."', EJ_advertAddress1 = '".$_POST['address1']."', EJ_advertAddress2 = '".$_POST['address2']."', EJ_advertAddress3 = '".$_POST['address3']."', EJ_advertAddress4 = '".$_POST['address4']."', EJ_advertAddress5 = '".$_POST['address5']."', EJ_advertPhone = '".$_POST['phone']."', EJ_advertWebsite = '".$_POST['website']."', EJ_advertContact = '".$_POST['contact']."'";
+		$query = "INSERT INTO {$EJ_mysql->prefix}module_EJ_adverts SET EJ_advertTitle='".urldecode($_POST['title'])."', EJ_advertTag='".urldecode($_POST['tag'])."', EJ_advertText='".str_replace(array("\n", "<br>", "<br/>", "£"),array("<br />","<br />","<br />", "&pound;"),to_utf8(urldecode($_POST['desc'])))."', EJ_advertCat = {$_POST['cat']}, EJ_advertDate = '".date("Y-m-d", strtotime($_POST['date']))."', EJ_advertImages='".$_POST['image']."', EJ_advertHidden = ".$_POST['hidden'].", EJ_advertPoster = '".$_POST['poster']."', EJ_advertLoc = '".$_POST['locs']."', EJ_advertAttributes = '".$_POST['atts']."', EJ_advertAddress1 = '".$_POST['address1']."', EJ_advertAddress2 = '".$_POST['address2']."', EJ_advertAddress3 = '".$_POST['address3']."', EJ_advertAddress4 = '".$_POST['address4']."', EJ_advertAddress5 = '".$_POST['address5']."', EJ_advertPhone = '".$_POST['phone']."', EJ_advertWebsite = '".$_POST['website']."', EJ_advertContact = '".$_POST['contact']."'";
+		
 	} else
 	{
 		$query = "UPDATE {$EJ_mysql->prefix}module_EJ_adverts SET EJ_advertTitle='".urldecode(to_utf8($_POST['title']))."', EJ_advertTag='".urldecode($_POST['tag'])."', EJ_advertText='".str_replace(array("\n", "<br>", "<br/>", "£"),array("<br />","<br />","<br />", "&pound;"),urldecode(to_utf8($_POST['desc'])))."', EJ_advertCat = ".$_POST['cat'].", EJ_advertDate = '".date("Y-m-d", strtotime($_POST['date']))."', EJ_advertImages='".$_POST['image']."', EJ_advertHidden = ".$_POST['hidden'].", EJ_advertPoster = '".$_POST['poster']."', EJ_advertLoc = '".$_POST['locs']."', EJ_advertAttributes = '".$_POST['atts']."', EJ_advertAddress1 = '".$_POST['address1']."', EJ_advertAddress2 = '".$_POST['address2']."', EJ_advertAddress3 = '".$_POST['address3']."', EJ_advertAddress4 = '".$_POST['address4']."', EJ_advertAddress5 = '".$_POST['address5']."', EJ_advertPhone = '".$_POST['phone']."', EJ_advertWebsite = '".$_POST['website']."', EJ_advertContact = '".$_POST['contact']."' WHERE EJ_advertId = ".$_POST['id']."";
 	}
 	$EJ_mysql->query($query);
+	if (is_dir('images/'.$_REQUEST['key']) and !isset($_POST['id']))
+	{
+		$id = mysql_insert_id();
+		$dir = opendir('images/'.$_REQUEST['key'].'/');
+		while ($file = readdir($dir))
+		{
+			if ($file != '.' and $file!='..')
+			{
+				rename('images/'.$_REQUEST['key'].'/'.$file, 'images/'.$id.'/'.$file);
+			}
+		}
+		rmdir('images/'.$_REQUEST['key']);
+	}
 	echo "OK";
 }
 ?>

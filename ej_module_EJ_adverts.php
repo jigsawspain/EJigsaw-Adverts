@@ -548,10 +548,10 @@ class EJ_adverts
 					<form name="add_form" id="add_form" action="?module=EJ_adverts&action=addadvert" method="post">
 						<div id="addLeft">
 							Click Image To Change<br/>
-							<img id="advertimage" src="'.$this->moduleloc.'images/noimage.png" alt="Add An Image" title="Click to Add an Image" onclick="changepic('.$advert['EJ_advertId'].')" style="width:200px; height:200px;" /><br/>
+							<img id="advertimage" src="'.$this->moduleloc.'images/noimage.png" alt="Add An Image" title="Click to Add an Image" onclick="changepic(\''.$_SESSION['key'].'\')" style="width:200px; height:200px;" /><br/>
 							<input type="hidden" name="image" id="image" />
 							<input type="button" name="save" id="save" value="Save Changes" onclick="saveadvert(\''.$_SESSION['key'].'\')"/><br/>
-							<input type="button" name="cancel" id="cancel" value="Cancel Changes" onclick="document.location=\'?module=EJ_adverts&action=admin_page\'"/>';
+							<input type="button" name="cancel" id="cancel" value="Cancel Changes" onclick="cancel_ad(\''.$_SESSION['key'].'\')"/>';
 						$content .='<br/><br/>
 							<strong>Posted By:</strong><br/>
 							<select name="poster" id="poster">';
@@ -1341,7 +1341,7 @@ class EJ_adverts
 				<p>
 					<strong>Name/Text Search:</strong><input type=\"text\" name=\"search_text\" id=\"search_text\" value=\"{$this->vars['search_text']}\" onkeyup=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}');\" />
 				</p>
-				<strong>Locations:</strong>";
+				<strong>Locations:</strong><ul>";
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs ORDER BY locName");
 		while ($loc = $this->EJ_mysql->getRow())
 		{
@@ -1360,10 +1360,10 @@ class EJ_adverts
 					if ($adloc == $loc['locId']) $checked[$loc['locId']] = ' checked="checked"';
 				}
 			}
-			$filter .= "<input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"{$checked[$loc['locId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label>";
+			$filter .= "<li><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"{$checked[$loc['locId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></li>";
 		}
-		$filter .= "
-		<strong>Attributes:</strong>";
+		$filter .= "</ul>
+		<strong>Attributes:</strong><ul>";
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_atts ORDER BY attName");
 		while ($att = $this->EJ_mysql->getRow())
 		{
@@ -1382,9 +1382,9 @@ class EJ_adverts
 					if ($adatt == $att['attId']) $checked[$att['attId']] = ' checked="checked"';
 				}
 			}
-			$filter .= "<input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label>";
+			$filter .= "<li><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label></li>";
 		}
-		$filter .= "
+		$filter .= "</ul>
 				<noscript>
 				<p>
 					<input type=\"submit\" name=\"update\" id=\"update\" value=\"Update\" />
@@ -1514,7 +1514,7 @@ class EJ_adverts
 					if (!empty($advert['EJ_advertAddress5'])) $content .= "<br/>{$advert['EJ_advertAddress5']}";
 					$content .= "<br/>";
 					if (!empty($advert['EJ_advertPhone'])) $content .= "<br/><img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}phone.png\" alt=\"Phone\"/> {$advert['EJ_advertPhone']}";
-					if (!empty($advert['EJ_advertWebsite'])) $content .= "<br/><img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}globe.png\" alt=\"Website\"/> <a href=\"{$advert['EJ_advertWebsite']}\" target=\"_blank\">Visit Website</a>";
+					if (!empty($advert['EJ_advertWebsite'])) $content .= "<br/><img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}globe.png\" alt=\"Website\"/> <a href=\"{$advert['EJ_advertWebsite']}\" target=\"_blank\">Visit Our Website</a>";
 					if (!empty($advert['EJ_advertAddress5']))
 					{
 						$content .= '<iframe width="190" height="250" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="http://maps.google.co.uk/maps?f=q&amp;source=s_q&amp;hl=en&amp;geocode=&amp;q='.str_replace(" ", "+", $advert['EJ_advertAddress5']).',United+Kindom&amp;aq=&amp;ie=UTF8&amp;hq=&amp;hnear='.str_replace(" ", "+", $advert['EJ_advertAddress5']).',United+Kingdom&amp;z=13&amp;output=embed&iwloc=null"></iframe><br /><small><a href="http://maps.google.co.uk/maps?f=q&amp;source=embed&amp;hl=en&amp;geocode=&amp;q='.str_replace(" ", "+", $advert['EJ_advertAddress5']).',United+Kingdom&amp;aq=&amp;ie=UTF8&amp;hq=&amp;hnear='.str_replace(" ", "+", $advert['EJ_advertAddress5']).',United+Kingdom&amp;z=13" style="color:#0000FF;text-align:left">View Larger Map</a></small>';
@@ -1568,12 +1568,34 @@ class EJ_adverts
 					$content .= "</div><div id=\"EJ_advertResult_mainRight\">";
 					if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}"))
 					{
-						$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/{$advert['EJ_advertImages']}?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}&amp;height=298&amp;width=298\" alt=\"{$advert['EJ_advertTitle']}\"/>";
+						$image = "<img id=\"EJ_advertImage\" src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/{$advert['EJ_advertImages']}?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}&amp;height=298&amp;width=298\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 					} else
 					{
-						$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=298&amp;width=298\" alt=\"{$advert['EJ_advertTitle']}\"/>";
+						$image = "<img id=\"EJ_advertImage\" src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=298&amp;width=298\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 					}
 					$content .= "<div id=\"EJ_advertResultImageHolder\">".$image."</div>";
+					$imgdir = dirname(__FILE__)."/EJ_adverts/images/{$advert['EJ_advertId']}/";
+					if (is_dir($imgdir))
+					{
+						$dir = opendir($imgdir);
+						$i=0;
+						while(($file = readdir($dir)) !== false and $i < 6)
+						{
+							if (substr($file,-4)=='.jpg' or substr($file,-4)=='.gif' or substr($file,-4)=='.png')
+							{
+								if ($i==0)
+								{
+									$content.= '<div style="display: table; margin: 5px auto;">';
+								}
+								$content .= '<span style="height:73px; width:98px; background: #CCC; display: table-cell; vertical-align: middle; margin: 0 5px; border: #AAA 1px solid; text-align: center;"><img src="'.$this->EJ_settings['instloc'].$this->moduleloc.'image.php/'.$file.'?image='.$this->EJ_settings['instloc'].$this->moduleloc.'images/'.$advert['EJ_advertId'].'/'.$file.'&amp;height=73&amp;width=98" onmouseover="swap_image(\'EJ_advertImage\', this)" style="cursor:pointer;" /></span>';
+								$i++;
+							}
+						}
+					}
+					if ($i!=0)
+					{
+						$content.='</div>';
+					}
 					$content .= "<ul id=\"EJ_advertResult_atts\">";
 					$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_atts ORDER BY attName");
 					while ($att = $this->EJ_mysql->getRow())

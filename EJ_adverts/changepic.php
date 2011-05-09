@@ -14,6 +14,10 @@ if (!isset($_POST['imagefind']) or empty($_POST['imagefind'])) {
 	<p><strong>Select an existing picture to use</strong><br/>
 	<div id="message" style="margin:0; padding:0;"><?=$message?></div>
 		<?php
+			if (!is_dir('/images/'.$_REQUEST['id'].'/'))
+			{
+				mkdir('/images/'.$_REQUEST['id'].'/',0777,true);
+			}
 			$directory = opendir('images/'.$_REQUEST['id'].'/');
 			while ($file = readdir($directory)) {
 				if ($file!='..' and $file!='.' and !is_dir($file) and (substr($file,-4)==".gif" or substr($file,-4)==".jpg" or substr($file,-4)==".png")){

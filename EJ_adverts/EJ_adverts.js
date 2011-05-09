@@ -520,6 +520,19 @@ function saveadvertprofile(key, id)
 	}
 }
 
+function cancel_ad(key)
+{
+	ajax = ajaxRequest();
+	ajax.onreadystatechange = function() {
+		if (ajax.readyState==4 && ajax.status==200) {
+			document.location='?module=EJ_adverts&action=admin_page';
+		}
+	}
+	ajax.open("POST","modules/EJ_adverts/canceladvert.php",true);
+	ajax.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+	ajax.send("key="+key);
+}
+
 function clear_message(id)
 {
 	document.getElementById(id).innerHTML = "";
@@ -800,4 +813,11 @@ function setPage(page,key,loc)
 {
 	document.advert_filter.page.value = page;
 	updateAdvertFilter(key,loc,page);
+}
+
+function swap_image(imgid, newimg)
+{
+	var img = document.getElementById(imgid);
+	var newsrc = newimg.src.split('&');
+	img.src = newsrc[0]+"&height=298&width=298";
 }

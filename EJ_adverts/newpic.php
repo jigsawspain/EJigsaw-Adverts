@@ -13,7 +13,7 @@ if (!isset($_FILES['imagefind']) or empty($_FILES['imagefind']['name'])) {
 	<div id="message" style="margin:0; padding:0;"><?=$message?></div>
 		<input type="file" name="imagefind" id="imagefind"/>
 		<br/>
-		<input type="button" name="save" id="save" value="Add Picture" style="width:100%;" onclick="sendimage()"/>
+		<input type="button" name="save" id="save" value="Add Picture" style="width:100%;" onclick="sendimage('<?=$_REQUEST['adid']?>')"/>
 	</p>
 </form>
 <?php
