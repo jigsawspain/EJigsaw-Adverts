@@ -28,11 +28,6 @@ if (!isset($_FILES['imagefind']) or empty($_FILES['imagefind']['name'])) {
 		$image = new SimpleImage();
 		$image->load($target_path);
 		$width = $image->getWidth();
-		if ($width>250) {
-			$image->resizeToWidth(250);
-			unlink($target_path);
-			$image->save($target_path);
-		}
 		echo basename( '<p>'.$_FILES['imagefind']['name']) . " has been uploaded!".'</p><input type="button" name="return" id="return" value="Return to Image Selection" onclick="document.location=\'changepic.php?id='.$_REQUEST['adid'].'\'"/>';
 	} else{
 		echo "There was an error uploading the file, please <a href=\"newpic.php?adid={$_REQUEST['adid']}\">try again<//a>!";
