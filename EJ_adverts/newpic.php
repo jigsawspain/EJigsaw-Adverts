@@ -24,7 +24,7 @@ if (!isset($_FILES['imagefind']) or empty($_FILES['imagefind']['name'])) {
 		mkdir(dirname(__FILE__)."/".$target_path,0777,true);
 	$target_path = $target_path . basename( $_FILES['imagefind']['name']);
 	if(move_uploaded_file($_FILES['imagefind']['tmp_name'], $target_path)) {
-		print("<script src=\"EJ_adverts.js\" language=\"javascript\" type=\"text/javascript\" onload=\"updateimage('".$_FILES['imagefind']['name']."', '{$_REQUEST['adid']}')\"></script>");
+		print("<script src=\"EJ_adverts.js\" language=\"javascript\" type=\"text/javascript\"></script>");
 		$image = new SimpleImage();
 		$image->load($target_path);
 		$width = $image->getWidth();
@@ -33,7 +33,7 @@ if (!isset($_FILES['imagefind']) or empty($_FILES['imagefind']['name'])) {
 			unlink($target_path);
 			$image->save($target_path);
 		}
-		echo basename( $_FILES['imagefind']['name']) . " has been uploaded!";
+		echo basename( '<p>'.$_FILES['imagefind']['name']) . " has been uploaded!".'</p><input type="button" name="return" id="return" value="Return to Image Selection" onclick="document.location=\'changepic.php?id='.$_REQUEST['adid'].'\'"/>';
 	} else{
 		echo "There was an error uploading the file, please <a href=\"newpic.php?adid={$_REQUEST['adid']}\">try again<//a>!";
 	}
