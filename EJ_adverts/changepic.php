@@ -3,6 +3,13 @@ if (!isset($_POST['imagefind']) or empty($_POST['imagefind'])) {
 	if (isset($_POST['save'])) {
 		$message="ERROR: Upload error or no picture selected.";
 	}
+	if ($_REQUEST['action']=='delete' and !empty($_REQUEST['image']))
+	{
+		if (file_exists('images/'.$_REQUEST['id'].'/'.$_REQUEST['image']))
+			unlink('images/'.$_REQUEST['id'].'/'.$_REQUEST['image']);
+		else
+			echo "ERROR: File '{$_REQUEST['image']}' Not Found! (It may have already been deleted)";
+	}
 ?>
 <script src="EJ_adverts.js" language="javascript" type="text/javascript"></script>
 <style>
@@ -21,7 +28,7 @@ if (!isset($_POST['imagefind']) or empty($_POST['imagefind'])) {
 			$directory = opendir('images/'.$_REQUEST['id'].'/');
 			while ($file = readdir($directory)) {
 				if ($file!='..' and $file!='.' and !is_dir($file) and (substr($file,-4)==".gif" or substr($file,-4)==".jpg" or substr($file,-4)==".png")){
-					echo "<div style=\"display:inline-block; text-align: center; font-size: 0.8em;\"><img style=\"width: 90px; height: 90px; margin: 5px; cursor: pointer;\" src=\"images/{$_REQUEST['id']}/$file\" alt=\"$file\" title=\"$file\" onclick=\"selectImage('$file')\" /><br/><a href=\"images/{$_REQUEST['id']}/$file\" target=\"_blank\">See Full Image</a></div></div>";
+					echo "<div style=\"display:inline-block; text-align: center; font-size: 0.8em;\"><img style=\"width: 90px; height: 90px; margin: 5px; cursor: pointer;\" src=\"images/{$_REQUEST['id']}/$file\" alt=\"$file\" title=\"$file\" onclick=\"selectImage('$file')\" /><br/><a href=\"images/{$_REQUEST['id']}/$file\" target=\"_blank\">See Full Image</a><br/><a href=\"javascript:if (confirm('Are You sure you want to delete $file?')) { document.location='?id={$_REQUEST['id']}&action=delete&image=$file'; }\">Delete Image</a></div></div>";
 				}
 			}
 		?>
