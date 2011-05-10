@@ -1584,10 +1584,10 @@ class EJ_adverts
 							if (substr($file,-4)=='.jpg' or substr($file,-4)=='.gif' or substr($file,-4)=='.png')
 							{
 								if ($i==0)
-								{
-									$content.= '<div style="display: table; margin: 5px auto;">';
-								}
-								$content .= '<span style="height:73px; width:98px; background: #CCC; display: table-cell; vertical-align: middle; margin: 0 5px; border: #AAA 1px solid; text-align: center;"><img src="'.$this->EJ_settings['instloc'].$this->moduleloc.'image.php/'.$file.'?image='.$this->EJ_settings['instloc'].$this->moduleloc.'images/'.$advert['EJ_advertId'].'/'.$file.'&amp;height=73&amp;width=98" onmouseover="swap_image(\'EJ_advertImage\', this)" style="cursor:pointer;" /></span>';
+									$content.= '<div style="display: table; margin: 5px auto; text-align: center;">';
+								elseif ($i==3)
+									$content.= '<br/>';
+								$content .= '<div style="height:73px; width:98px; background: #CCC; display:inline-block; line-height: 73px; border: #AAA 1px solid; text-align: center;"><img src="'.$this->EJ_settings['instloc'].$this->moduleloc.'image.php/'.$file.'?image='.$this->EJ_settings['instloc'].$this->moduleloc.'images/'.$advert['EJ_advertId'].'/'.$file.'&amp;height=73&amp;width=98" onmouseover="swap_image(\'EJ_advertImage\', this)" style="cursor:pointer; vertical-align: middle;" /></div>';
 								$i++;
 							}
 						}
