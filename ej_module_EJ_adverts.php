@@ -10,7 +10,7 @@ if (!class_exists("EJ_adverts"))
 {
 class EJ_adverts
 {
-	public $version = "0.3";
+	public $version = "0.3.1";
 	public $creator = "Jigsaw Spain";
 	public $name = "EJigsaw Adverts";
 	private $EJ_mysql;
@@ -68,6 +68,7 @@ class EJ_adverts
 				EJ_advertWebsite VARCHAR(150) ,
 				EJ_advertContact VARCHAR(150) NOT NULL ,
 				EJ_advertAttributes TEXT NOT NULL ,
+				EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0,
 				PRIMARY KEY (EJ_advertId)
 				)");
 			$this->EJ_mysql->query("SHOW TABLES LIKE '{$this->EJ_mysql->prefix}module_EJ_adverts'");
@@ -201,6 +202,9 @@ class EJ_adverts
 			</p>";
 		switch ($this->vars['oldversion'])
 		{
+			case "0.3":
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0");
+			break;
 			default:
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTag VARCHAR(150)");
 			break;
@@ -631,6 +635,7 @@ class EJ_adverts
 							<strong>Advert Renewal Date:</strong><br/>
 							<script>DateInput(\'date\', true, \'DD-MON-YYYY\', \''.date("d-M-Y").'\' , \''.$_SESSION['key'].'\');</script>';
 		$content .= '
+							<br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true" />
 						</div>
 						<div style="clear: left;"></div>
 					</form>
@@ -822,7 +827,15 @@ class EJ_adverts
 			$content .= '<br/><br/>
 							<strong>Advert Renewal Date:</strong><br/>
 							<script>DateInput(\'date\', true, \'DD-MON-YYYY\', \''.date("d-M-Y", strtotime($advert['EJ_advertDate'])).'\' , \''.$_SESSION['key'].'\');</script>';
+			if ($advert['EJ_advertTried']==1)
+			{
+				$checked = ' checked="checked"';
+			} else
+			{
+				$checked = "";
+			}
 			$content .= '
+							<br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true"'.$checked.' />
 						</div>
 						<div style="clear: left;"></div>
 					</form>';
@@ -1397,7 +1410,7 @@ class EJ_adverts
 					if ($adatt == $att['attId']) $checked[$att['attId']] = ' checked="checked"';
 				}
 			}
-			$filter .= "<li><input type=\"checkbox\" name=\"att[]\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label></li>";
+			$filter .= "<li><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label></li>";
 		}
 		$filter .= "</ul>
 				<noscript>
@@ -1466,7 +1479,11 @@ class EJ_adverts
 				{
 					$image = "<img class=\"EJ_advertResult_img\" src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=100&amp;width=100\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 				}
-				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr($advert['EJ_advertText'],0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
+				if ($advert['EJ_advertTried']==1)
+					$tried = " <img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em;\" />";
+				else
+					$tried = "";
+				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a>$tried</div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr($advert['EJ_advertText'],0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
 			}
 		}
 		$this->EJ_mysql->query("SELECT FOUND_ROWS() as results");
