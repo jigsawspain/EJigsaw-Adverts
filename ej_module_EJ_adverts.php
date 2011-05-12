@@ -1410,7 +1410,14 @@ class EJ_adverts
 		$query = "SELECT SQL_CALC_FOUND_ROWS *, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = EJ_advertCat) as catName, ($locfind) as locName FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertHidden = 0";
 		if (isset($this->vars['category']) and $this->vars['category']!="0")
 		{
-			$query .= " and EJ_advertCat = '{$this->vars['category']}'";
+			$this->EJ_mysql->query("SELECT catId FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = {$this->vars['category']} OR subCatOf = {$this->vars['category']}");
+			$query .= " and (";
+			while ($catid = $this->EJ_mysql->getRow())
+			{
+				$query .= "EJ_advertCat = '{$catid['catId']}' OR ";
+			}
+			$query = substr($query,0,-4);
+			$query .= ")";
 		}
 		if (isset($this->vars['loc']))
 		{
