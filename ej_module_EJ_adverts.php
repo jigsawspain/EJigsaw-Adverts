@@ -1547,7 +1547,11 @@ class EJ_adverts
 					{
 						$this->EJ_mysql->query("UPDATE {$this->EJ_mysql->prefix}module_EJ_adverts_hits SET hits = hits + 1 WHERE adId = '{$advert['EJ_advertId']}' and hitMonth = '".date("my")."'");
 					}
-					$content .= "<div class=\"EJ_advertResult_header\">{$advert['EJ_advertTitle']}</div><div id=\"EJ_advertResult_right\"><div id=\"EJ_advertResult_address\"><strong>{$advert['EJ_advertTitle']}</strong><br/>{$advert['EJ_advertAddress1']}<br/>{$advert['EJ_advertAddress2']}";
+					if ($advert['EJ_advertTried']==1)
+					$tried = " <img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em;\" />";
+				else
+					$tried = "";
+					$content .= "<div class=\"EJ_advertResult_header\">{$advert['EJ_advertTitle']}$tried</div><div id=\"EJ_advertResult_right\"><div id=\"EJ_advertResult_address\"><strong>{$advert['EJ_advertTitle']}</strong><br/>{$advert['EJ_advertAddress1']}<br/>{$advert['EJ_advertAddress2']}";
 					if (!empty($advert['EJ_advertAddress3'])) $content .= "<br/>{$advert['EJ_advertAddress3']}";
 					if (!empty($advert['EJ_advertAddress4'])) $content .= "<br/>{$advert['EJ_advertAddress4']}";
 					if (!empty($advert['EJ_advertAddress5'])) $content .= "<br/>{$advert['EJ_advertAddress5']}";
