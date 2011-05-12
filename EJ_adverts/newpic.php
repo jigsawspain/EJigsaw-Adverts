@@ -22,7 +22,7 @@ if (!isset($_FILES['imagefind']) or empty($_FILES['imagefind']['name'])) {
 	$target_path = "images/{$_REQUEST['adid']}/";
 	if (!is_dir(dirname(__FILE__)."/".$target_path))
 		mkdir(dirname(__FILE__)."/".$target_path,0777,true);
-	$target_path = $target_path . basename( $_FILES['imagefind']['name']);
+	$target_path = $target_path . $_REQUEST['adid']."_".substr(time(),-4).substr($_FILES['imagefind']['name'],-4);
 	if(move_uploaded_file($_FILES['imagefind']['tmp_name'], $target_path)) {
 		print("<script src=\"EJ_adverts.js\" language=\"javascript\" type=\"text/javascript\"></script>");
 		$image = new SimpleImage();
