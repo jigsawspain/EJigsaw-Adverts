@@ -124,21 +124,15 @@ function updateAdvertFilter(key,instloc, page)
 		attributes = attributes.substr(0, attributes.length -1);
 	}
 	var locations = "";
-	if (empty(form.loc.length))
+	var locs = document.getElementsByName('loc[]');
+	for (var i = 0; i < locs.length; i++)
 	{
-		if (form.loc.checked==true)
+		if (locs[i].checked==true)
 		{
-			locations = form.loc.value;
+			locations = locations + locs[i].value + ":";
 		}
-	} else
-	{
-		for (i=0; i<form.loc.length; i++)
-		{
-			if (form.loc[i].checked==true)
-				locations = locations + form.loc[i].value + ":";
-		}
-		locations = locations.substr(0, locations.length -1);
 	}
+	locations = locations.substr(0, locations.length -1);
 	var ajax = ajaxRequest();
 	ajax.onreadystatechange = function()
 	{

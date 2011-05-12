@@ -1315,8 +1315,8 @@ class EJ_adverts
 	
 	function show_ads()
 	{
-		if (isset($_REQUEST['page']))
-			$page = $_REQUEST['page'];
+		if (isset($this->vars['page']))
+			$page = $this->vars['page'];
 		else
 			$page = 1;
 		$filter .= "<div id=\"EJ_advertFilter\"><div class=\"EJ_advertResult_header\">Search Filter</div><form name=\"advert_filter\" id=\"advert_filter\" method=\"post\" action=\"?module=EJ_adverts&action=show_ads\">";
@@ -1345,12 +1345,27 @@ class EJ_adverts
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs ORDER BY locName");
 		while ($loc = $this->EJ_mysql->getRow())
 		{
-			if (isset($search['EJ_advertLoc']) or (isset($_REQUEST['loc']) and $_REQUEST['loc']!=$loc['locId']))
+			if (isset($search['EJ_advertLoc']) or (isset($this->vars['loc']) and count($this->vars['loc'])==1 and $this->vars['loc'][0]!=$loc['locId']))
 			{
 				$checked[$loc['locId']] = "";
-			} else
+			} elseif (!isset($this->vars['loc'])) 
 			{
 				$checked[$loc['locId']] = " checked=\"checked\"";
+			} else
+			{
+				if (count($this->vars['loc'])==1 and $this->vars['loc'][0]==$loc['locId'])
+				{
+					$checked[$loc['locId']] = " checked=\"checked\"";
+				} elseif (count($this->vars['loc'])!=1)
+				{
+					foreach ($this->vars['loc'] as $locid)
+					{
+						if ($locid == $loc['locId'])
+						{
+							$checked[$loc['locId']] = " checked=\"checked\"";
+						}
+					}
+				}
 			}
 			if (!empty($advertlocs))
 			{
@@ -1360,7 +1375,7 @@ class EJ_adverts
 					if ($adloc == $loc['locId']) $checked[$loc['locId']] = ' checked="checked"';
 				}
 			}
-			$filter .= "<li><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"{$checked[$loc['locId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></li>";
+			$filter .= "<li><input type=\"checkbox\" name=\"loc[]\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"{$checked[$loc['locId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></li>";
 		}
 		$filter .= "</ul>
 		<strong>Attributes:</strong><ul>";
@@ -1391,21 +1406,21 @@ class EJ_adverts
 				</p>
 				</noscript>
 			</form></div>";
-		if (isset($this->vars['loc']))
-		{
-			$locfind = "SELECT locName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs WHERE locID = {$this->vars['loc']}";
-		} else
-		{
-			$locfind = "SELECT locName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs WHERE locID = SUBSTRING_INDEX(SUBSTR(EJ_advertLoc,2),')',1)";
-		}
+		$locfind = "SELECT locName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs WHERE locID = SUBSTRING_INDEX(SUBSTR(EJ_advertLoc,2),')',1)";
 		$query = "SELECT SQL_CALC_FOUND_ROWS *, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = EJ_advertCat) as catName, ($locfind) as locName FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertHidden = 0";
-		if (isset($this->vars['category']))
+		if (isset($this->vars['category']) and $this->vars['category']!="0")
 		{
 			$query .= " and EJ_advertCat = '{$this->vars['category']}'";
 		}
 		if (isset($this->vars['loc']))
 		{
-			$query .= " and EJ_advertLoc LIKE '%({$this->vars['loc']})%'";
+			$query .= " and (";
+			foreach ($this->vars['loc'] as $loc)
+			{
+				$query .= "EJ_advertLoc LIKE '%($loc)%' OR ";
+			}
+			$query = substr($query,0,-4);
+			$query .= ")";
 		}
 		if (isset($this->vars['search_text']))
 		{
