@@ -1397,7 +1397,7 @@ class EJ_adverts
 					if ($adatt == $att['attId']) $checked[$att['attId']] = ' checked="checked"';
 				}
 			}
-			$filter .= "<li><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label></li>";
+			$filter .= "<li><input type=\"checkbox\" name=\"att[]\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label></li>";
 		}
 		$filter .= "</ul>
 				<noscript>
@@ -1579,7 +1579,7 @@ class EJ_adverts
 						}
 					}
 					$content .= $form."</div>";
-					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><strong>{$advert['EJ_advertTag']}</strong><br/>".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText']);
+					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><div style=\"margin-bottom: 5px; font-weight: bold;\">{$advert['EJ_advertTag']}</div>".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText']);
 					$content .= "</div><div id=\"EJ_advertResult_mainRight\">";
 					if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}"))
 					{
