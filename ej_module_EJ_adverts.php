@@ -1630,7 +1630,7 @@ class EJ_adverts
 									$content.= '<div style="display: table; margin: 5px auto; text-align: center;">';
 								elseif ($i==3)
 									$content.= '<br/>';
-								$content .= '<div style="height:73px; width:98px; background: #CCC; display:inline-block; line-height: 73px; border: #AAA 1px solid; text-align: center;"><img src="'.$this->EJ_settings['instloc'].$this->moduleloc.'image.php/'.$file.'?image='.$this->EJ_settings['instloc'].$this->moduleloc.'images/'.$advert['EJ_advertId'].'/'.$file.'&amp;height=73&amp;width=98" onmouseover="swap_image(\'EJ_advertImage\', this)" style="cursor:pointer; vertical-align: middle;" /></div>';
+								$content .= '<div style="height:73px; width:98px; display:inline-block; line-height: 73px; border: #AAA 1px solid; text-align: center;"><img src="'.$this->EJ_settings['instloc'].$this->moduleloc.'image.php/'.$file.'?image='.$this->EJ_settings['instloc'].$this->moduleloc.'images/'.$advert['EJ_advertId'].'/'.$file.'&amp;height=73&amp;width=98" onmouseover="swap_image(\'EJ_advertImage\', this)" style="cursor:pointer; vertical-align: middle;" /></div>';
 								$i++;
 							}
 						}
@@ -1688,7 +1688,7 @@ class EJ_adverts
 			{
 				$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 			}
-			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear: left;\"></div></div>";
+			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear: left;\"></div></div>";
 			$count ++;
 		}
 		if ($count < 5)
@@ -1708,7 +1708,7 @@ class EJ_adverts
 				{
 					$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 				}
-				$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear:left; \"></div></div>";
+				$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear:left; \"></div></div>";
 			}
 		}
 		echo $content;
@@ -1730,7 +1730,7 @@ class EJ_adverts
 			{
 				$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 			}
-			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div>".str_replace(array('<br>','<br/>','<br />', "\n")," ",substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear: left;\"></div></div>";
+			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div>".str_replace(array('<br>','<br/>','<br />', "\n")," ",substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear: left;\"></div></div>";
 		}
 		echo $content;
 	}

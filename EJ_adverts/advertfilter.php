@@ -97,14 +97,14 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 				{
 					$advert['locName'] = "Multiple Locations";
 				}
-				if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/images/".$advert['EJ_advertImages']))
+				if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/images/".$advert['EJ_advertId']."/".$advert['EJ_advertImages']))
 				{
-					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php{$EJ_settings['instloc']}modules/EJ_adverts/images/{$advert['EJ_advertImages']}?image={$EJ_settings['instloc']}modules/EJ_adverts/images/{$advert['EJ_advertImages']}&amp;height=100&amp;width=100\" alt=\"{$EJ_advertTitle}\"/>";
+					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php/{$advert['EJ_advertImages']}?image={$EJ_settings['instloc']}modules/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}&amp;height=100&amp;width=100\" alt=\"{$EJ_advertTitle}\"/>";
 				} else
 				{
-					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php{$EJ_settings['instloc']}modules/EJ_adverts/images/noimage.png?image={$EJ_settings['instloc']}modules/EJ_adverts/images/noimage.png&amp;height=100&amp;width=100\" alt=\"{$advert['EJ_advertTitle']}\"/>";
+					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php/noimage.png?image={$EJ_settings['instloc']}modules/EJ_adverts/images/noimage.png&amp;height=100&amp;width=100\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 				}
-				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>{$advert['EJ_advertText']}... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
+				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr($advert['EJ_advertText'],0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
 			}
 		}
 	$EJ_mysql->query("SELECT FOUND_ROWS() as results");

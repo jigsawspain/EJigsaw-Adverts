@@ -94,12 +94,12 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 	{
 		while ($result = $EJ_mysql->getRow())
 		{
-			if (empty($result['EJ_advertImages']) or !file_exists("images/".$result['EJ_advertImages']))
+			if (empty($result['EJ_advertImages']) or !file_exists("images/".$result['EJ_advertId']."/".$result['EJ_advertImages']))
 			{
 				$img = "noimage.png";
 			} else
 			{
-				$img = $result['EJ_advertImages'];
+				$img = $result['EJ_advertId']."/".$result['EJ_advertImages'];
 			}
 			$date = date("d/m/Y", strtotime($result['EJ_advertDate']));
 			if ($result['EJ_advertDate'] < date("Y-m-d", time()))

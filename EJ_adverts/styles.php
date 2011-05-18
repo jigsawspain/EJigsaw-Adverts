@@ -180,14 +180,16 @@ h2 img
 
 .EJ_advertPopular
 {
-	font-size: 0.8em;
+	font-size: 11px;
 	margin: 3px 0;
 	width: 100%;
+	font-weight: bold;
 }
 
-.EJ_advertPopular .header
+.EJ_advertPopular .header a
 {
 	font-weight: bold;
+	font-size: 14px !important;
 }
 
 .EJ_advertPopular a
@@ -256,6 +258,7 @@ h2 img
 	height: 25px;
 	line-height: 25px;
 	padding: 0 5px;
+	font-size: 18px;
 }
 
 .EJ_advertResult_header a
@@ -318,7 +321,7 @@ h2 img
 
 #EJ_advertResultImageHolder
 {
-	background: #CCC;
+	/*background: #CCC;*/
 	border: #AAA 1px solid;
 	display: table-cell;
 	height: 298px;
