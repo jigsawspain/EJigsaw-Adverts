@@ -10,7 +10,7 @@ if (!class_exists("EJ_adverts"))
 {
 class EJ_adverts
 {
-	public $version = "0.3.1";
+	public $version = "0.3.2";
 	public $creator = "Jigsaw Spain";
 	public $name = "EJigsaw Adverts";
 	private $EJ_mysql;
@@ -69,6 +69,7 @@ class EJ_adverts
 				EJ_advertContact VARCHAR(150) NOT NULL ,
 				EJ_advertAttributes TEXT NOT NULL ,
 				EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0,
+				EJ_advertExtra TEXT,
 				PRIMARY KEY (EJ_advertId)
 				)");
 			$this->EJ_mysql->query("SHOW TABLES LIKE '{$this->EJ_mysql->prefix}module_EJ_adverts'");
@@ -201,12 +202,18 @@ class EJ_adverts
 			&gt; EJ Adverts Update Procedure
 			</p>";
 		switch ($this->vars['oldversion'])
-		{
+		{			
+			case "0.3.1":
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertExtra TEXT");
+			break;
 			case "0.3":
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0");
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertExtra TEXT");
 			break;
 			default:
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTag VARCHAR(150)");
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0");
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertExtra TEXT");
 			break;
 		}
 		echo "
@@ -635,7 +642,8 @@ class EJ_adverts
 							<strong>Advert Renewal Date:</strong><br/>
 							<script>DateInput(\'date\', true, \'DD-MON-YYYY\', \''.date("d-M-Y").'\' , \''.$_SESSION['key'].'\');</script>';
 		$content .= '
-							<br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true" />
+							<br/><strong>Extra Info:</strong><br/><textarea name="extra" id="extra" rows="5" cols="40"></textarea>
+							<br/><br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true" />
 						</div>
 						<div style="clear: left;"></div>
 					</form>
@@ -835,7 +843,8 @@ class EJ_adverts
 				$checked = "";
 			}
 			$content .= '
-							<br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true"'.$checked.' />
+							<br/><strong>Extra Info:</strong><br/><textarea name="extra" id="extra" rows="5" cols="40">'.$advert['EJ_advertExtra'].'</textarea>							
+							<br/><br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true"'.$checked.' />
 						</div>
 						<div style="clear: left;"></div>
 					</form>';
@@ -1594,7 +1603,7 @@ class EJ_adverts
 							$form = "<p style=\"padding: 5px;\"><strong style=\"font-size: 1.2em;\">Thank You!</strong> your enquiry has been sent to {$advert['EJ_advertTitle']}.</p>";
 							$to = $_POST['EJ_enqEmail'];
 							$from = $this->EJ_settings['sitename']." <".$this->EJ_settings['siteemail'].">";
-							$message = "<html><p>Thank you for submitting an equiry via the {$this->EJ_settings['sitename']} website.</p><p>This email is to confirm that your message has been successfully forwarded to {$advert['EJ_advertTitle']}.</p><p>Kind Regards</p><p>{$this->EJ_settings['sitename']}</p><hr/><p><strong>Your Message:</strong><br/>$details</p></html>";
+							$message = "<html><p>Thank you for submitting an enquiry via the {$this->EJ_settings['sitename']} website.</p><p>This email is to confirm that your message has been successfully forwarded to {$advert['EJ_advertTitle']}.</p><p>Kind Regards</p><p>{$this->EJ_settings['sitename']}</p><hr/><p><strong>Your Message:</strong><br/>$details</p></html>";
 							$headers = "From: $from" . "\r\n" .
 							"Reply-To: $from" . "\r\n" .
 							"Content-Type: text/html; charset=\"iso-8859-1\"" . "\r\n" .
@@ -1607,7 +1616,11 @@ class EJ_adverts
 						}
 					}
 					$content .= $form."</div>";
-					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><div style=\"margin-bottom: 10px; font-weight: bold;\">{$advert['EJ_advertTag']}</div>".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText']);
+					if (!empty($advert['EJ_advertExtra']))
+					{
+						$extra = "<div id=\"EJ_advertResult_extra\">".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText'])."</div>";
+					}
+					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><div style=\"margin-bottom: 10px; font-weight: bold;\">{$advert['EJ_advertTag']}</div>".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText']).$extra;
 					$content .= "</div><div id=\"EJ_advertResult_mainRight\">";
 					if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}"))
 					{
@@ -2018,7 +2031,8 @@ class EJ_adverts
 				$content .= '<br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" value="'.$advert['EJ_advertAddress1'].'" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" value="'.$advert['EJ_advertAddress2'].'" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" value="'.$advert['EJ_advertAddress3'].'" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" value="'.$advert['EJ_advertAddress4'].'" /><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" value="'.$advert['EJ_advertAddress5'].'" /><br/>
 									<strong>Advertiser Phone:</strong><br/><input type="text" name="phone" id="phone" maxlength="15" size="15" value="'.$advert['EJ_advertPhone'].'" /><br/>
 									<strong>Contact Email:</strong><br/><input type="text" name="contact" id="contact" maxlength="150" size="40" value="'.$advert['EJ_advertContact'].'" /><br/>
-									<strong>Advertiser Website:</strong> (incl. http://)<br/><input type="text" name="website" id="website" maxlength="150" size="40" value="'.$advert['EJ_advertWebsite'].'" />';
+									<strong>Advertiser Website:</strong> (incl. http://)<br/><input type="text" name="website" id="website" maxlength="150" size="40" value="'.$advert['EJ_advertWebsite'].'" />
+									<br/><br/><strong>Extra Info:</strong><br/><textarea name="extra" id="extra" rows="5" cols="40">'.$advert['EJ_advertExtra'].'</textarea>';
 				$content .= '
 							</div>
 							<div style="clear: both;"></div>

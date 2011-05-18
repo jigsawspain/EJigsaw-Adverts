@@ -312,6 +312,7 @@ function saveadvert(key, id)
 					form.phone.value = "";
 					form.contact.value = "";
 					form.website.value = "";
+					form.extra.value = "";
 					form.tried.checked = false;
 					document.getElementById('advertimage').src = 'modules/EJ_adverts/images/noimage.png';
 					document.location="?module=EJ_adverts&action=search";
@@ -374,6 +375,14 @@ function saveadvert(key, id)
 			}
 			atts = atts.substr(0,atts.length -1);
 		}
+		if (!empty(form.extra.value))
+		{
+			extra = "&extra="+escape(form.extra.value);
+		}
+		else
+		{
+			extra = null;
+		}
 		if (form.tried.checked)
 		{
 			tried = "&tried=1";
@@ -388,7 +397,7 @@ function saveadvert(key, id)
 		{
 			sendid = "";
 		}
-		ajax.send("title="+escape(title)+"&tag="+escape(tag)+"&desc="+escape(desc)+"&cat="+cat+"&date="+date+"&poster="+poster+"&hidden="+hidden+"&address1="+address1+"&address2="+address2+"&address3="+address3+"&address4="+address4+"&address5="+address5+"&phone="+phone+"&contact="+contact+"&website="+website+"&image="+image+"&locs="+locs+"&atts="+atts+tried+sendid+"&key="+key);
+		ajax.send("title="+escape(title)+"&tag="+escape(tag)+"&desc="+escape(desc)+"&cat="+cat+"&date="+date+"&poster="+poster+"&hidden="+hidden+"&address1="+address1+"&address2="+address2+"&address3="+address3+"&address4="+address4+"&address5="+address5+"&phone="+phone+"&contact="+contact+"&website="+website+"&image="+image+"&locs="+locs+"&atts="+atts+tried+extra+sendid+"&key="+key);
 	}
 }
 
@@ -460,6 +469,7 @@ function saveadvertprofile(key, id)
 					form.phone.value = "";
 					form.contact.value = "";
 					form.website.value = "";
+					form.extra.value = "";
 					document.getElementById('advertimage').src = 'modules/EJ_adverts/images/noimage.png';
 					document.location="?module=EJ_adverts&advertid="+id;
 				} else {
@@ -518,7 +528,15 @@ function saveadvertprofile(key, id)
 			}
 			atts = atts.substr(0,atts.length -1);
 		}
-		ajax.send("title="+escape(title)+"&tag="+escape(tag)+"&desc="+escape(desc)+"&cat="+cat+"&address1="+address1+"&address2="+address2+"&address3="+address3+"&address4="+address4+"&address5="+address5+"&phone="+phone+"&contact="+contact+"&website="+website+"&image="+image+"&locs="+locs+"&atts="+atts+"&id="+id+"&key="+key);
+		if (!empty(form.extra.value))
+		{
+			extra = "&extra="+escape(form.extra.value);
+		}
+		else
+		{
+			extra = null;
+		}
+		ajax.send("title="+escape(title)+"&tag="+escape(tag)+"&desc="+escape(desc)+"&cat="+cat+"&address1="+address1+"&address2="+address2+"&address3="+address3+"&address4="+address4+"&address5="+address5+"&phone="+phone+"&contact="+contact+"&website="+website+"&image="+image+"&locs="+locs+"&atts="+atts+extra+"&id="+id+"&key="+key);
 	}
 }
 
