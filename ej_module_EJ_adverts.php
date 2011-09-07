@@ -10,7 +10,7 @@ if (!class_exists("EJ_adverts"))
 {
 class EJ_adverts
 {
-	public $version = "0.3.2";
+	public $version = "0.4.1";
 	public $creator = "Jigsaw Spain";
 	public $name = "EJigsaw Adverts";
 	private $EJ_mysql;
@@ -58,7 +58,7 @@ class EJ_adverts
 				EJ_advertImages TEXT ,
 				EJ_advertHidden TINYINT(1) NOT NULL DEFAULT 1 ,
 				EJ_advertPoster VARCHAR(20) NOT NULL ,
-				EJ_advertCat Int(6) NOT NULL ,
+				EJ_advertCat TEXT NOT NULL ,
 				EJ_advertAddress1 VARCHAR(150) NOT NULL DEFAULT 'No Address Provided',
 				EJ_advertAddress2 VARCHAR(150) NOT NULL DEFAULT 'Please Use Enquiry Form' ,
 				EJ_advertAddress3 VARCHAR(150) ,
@@ -202,18 +202,30 @@ class EJ_adverts
 			&gt; EJ Adverts Update Procedure
 			</p>";
 		switch ($this->vars['oldversion'])
-		{			
+		{
+			case "0.4":
+			break;
+			case "0.3.2":
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts MODIFY EJ_advertCat TEXT");
+				$this->EJ_mysql->query("UPDATE {$this->EJ_mysql->prefix}module_EJ_adverts SET EJ_advertCat = CONCAT('(',EJ_advertCat,')')");
+			break;
 			case "0.3.1":
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertExtra TEXT");
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts MODIFY EJ_advertCat TEXT");
+				$this->EJ_mysql->query("UPDATE {$this->EJ_mysql->prefix}module_EJ_adverts SET EJ_advertCat = CONCAT('(',EJ_advertCat,')')");
 			break;
 			case "0.3":
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0");
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertExtra TEXT");
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts MODIFY EJ_advertCat TEXT");
+				$this->EJ_mysql->query("UPDATE {$this->EJ_mysql->prefix}module_EJ_adverts SET EJ_advertCat = CONCAT('(',EJ_advertCat,')')");
 			break;
 			default:
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTag VARCHAR(150)");
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertTried TINYINT(1) NOT NULL DEFAULT 0");
 				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts ADD EJ_advertExtra TEXT");
+				$this->EJ_mysql->query("ALTER TABLE {$this->EJ_mysql->prefix}module_EJ_adverts MODIFY EJ_advertCat TEXT");
+				$this->EJ_mysql->query("UPDATE {$this->EJ_mysql->prefix}module_EJ_adverts SET EJ_advertCat = CONCAT('(',EJ_advertCat,')')");
 			break;
 		}
 		echo "
@@ -299,10 +311,21 @@ class EJ_adverts
 					break;
 					case 'EJ_advertText' :
 						$skip=1;
-						$query .= " AND (EJ_advertText LIKE '%$value%' OR EJ_advertTitle LIKE '%$value%')";
+						$words = explode(" ", $value);
+						$query .= " AND (";
+						foreach($words as $word)
+						{
+							if (!empty($word))
+							{
+								$query .= "(EJ_advertText LIKE '%$word%' OR EJ_advertTitle LIKE '%$word%') AND ";
+							}
+						}
+						$query = substr($query, 0, -5).")";
 						$adverttext = " value=\"$value\"";
 					break;
 					case 'EJ_advertCat' :
+						$skip=1;
+						$query .= " AND $key LIKE '%($value)%'";
 						$advertcat = $value;
 					break;
 					case 'EJ_advertAttributes' :
@@ -380,13 +403,13 @@ class EJ_adverts
 		else 
 			$limitstart = "";
 		$query .= " LIMIT ".$limitstart.$items;
-		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats ORDER BY catName");
+		$this->EJ_mysql->query("SELECT *, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats as t1 WHERE t1.catId = t2.subCatOf) as parent FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats as t2 ORDER BY parent ASC, catName ASC");
 		$categories = "";
 		while ($cat = $this->EJ_mysql->getRow())
 		{
 			$selected = "";
 			if ($advertcat == $cat['catId']) $selected = ' selected="selected"';
-			$categories .= "<option value=\"{$cat['catId']}\"$selected>{$cat['catName']}</option>\n						";
+			$categories .= "<option value=\"{$cat['catId']}\"$selected>{$cat['parent']}&gt;{$cat['catName']}</option>\n						";
 		}
 		$this->EJ_mysql->query("SELECT EJ_advertPoster FROM {$this->EJ_mysql->prefix}module_EJ_adverts GROUP BY EJ_advertPoster ORDER BY EJ_advertPoster");
 		$posters = "";
@@ -601,13 +624,20 @@ class EJ_adverts
 							<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" /><br/>
 							<strong>Advert Description:</strong><br/>
 							<textarea name="desc" id="desc" rows="5" cols="40" /></textarea><br/>
-							<strong>Category:</strong><br/>
-							<select name="cat" id="cat">
-								<option value="NONE" selected="selected">Please Select...</option>';
+							<strong>Categories:</strong><br/>';
 		$this->EJ_mysql->query("SELECT catId, subCatOf, catName, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats2 WHERE cats2.catId = cats1.subCatOf) AS parent FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats1 ORDER BY parent ASC, catName ASC");
+		$parent="";
 		while ($cat = $this->EJ_mysql->getRow())
 		{
-			if (!empty($cat['parent']))
+			if ($cat['parent']!=$parent)
+			{
+				$parent = $cat['parent'];
+				$content .= "<br/>
+							<em>".$parent."</em>&gt;<br/>";
+			}
+			$content .= "
+							<span style=\"width: 240px; display:inline-block;\"><input type=\"checkbox\" name=\"cat\" id=\"cat{$cat['catId']}\" value=\"{$cat['catId']}\" /> <label for=\"cat{$cat['catId']}\">{$cat['catName']}</label></span>";
+			/*if (!empty($cat['parent']))
 			{
 			$content .= '
 								<option value="'.$cat['catId'].'">'.$cat['parent'].'&gt;'.$cat['catName'].' ('.$cat['subCatOf'].'&gt;'.$cat['catId'].')</option>';
@@ -615,16 +645,16 @@ class EJ_adverts
 			{
 				$content .= '
 								<option value="'.$cat['catId'].'">'.$cat['catName'].' ('.$cat['catId'].')</option>';
-			}
+			}*/
 		}
 		$content .= '
-							</select><br/><br/>
+							<br/><br/>
 							<strong>Locations:</strong><br/>';
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs");
 		while ($loc = $this->EJ_mysql->getRow())
 		{
 			$content .= "
-							<span style=\"width: 200px;\"><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\" /> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></span>";
+							<span style=\"width: 240px; display:inline-block;\"><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\" /> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></span>";
 		}
 		$content .= '<br/><br/>
 							<strong>Attributes:</strong><br/>';
@@ -632,7 +662,7 @@ class EJ_adverts
 		while ($att = $this->EJ_mysql->getRow())
 		{
 			$content .= "
-							<span style=\"width: 200px;\"><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\" /> <label for=\"att{$att['attId']}\">{$att['attName']}</label></span>";
+							<span style=\"width: 240px; display:inline-block;\"><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\" /> <label for=\"att{$att['attId']}\">{$att['attName']}</label></span>";
 		}
 		$content .= '<br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" /><br/><strong>Post Code:</strong><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" /><br/>
 							<strong>Advertiser Phone:</strong><br/><input type="text" name="phone" id="phone" maxlength="15" size="15" /><br/>
@@ -675,7 +705,7 @@ class EJ_adverts
 						<div id="addLeft">
 							Click Image To Change<br/>
 							<img id="advertimage" src="'.$this->moduleloc.'images/'.$img.'" alt="Change Image" title="Click to Change Image" onclick="changepic('.$advert['EJ_advertId'].')"  style="width:200px; height:200px;" /><br/>
-							<input type="hidden" name="image" id="image" value="'.$img.'" />
+							<input type="hidden" name="image" id="image" value="'.$advert['EJ_advertImages'].'" />
 							<input type="button" name="save" id="save" value="Save Changes" onclick="saveadvert(\''.$_SESSION['key'].'\','.$this->vars['advertid'].')"/><br/>
 							<input type="button" name="cancel" id="cancel" value="Cancel Changes" onclick="document.location=\'?module=EJ_adverts&action=admin_page\'"/>';
 						$content .= '<br/><br/>
@@ -766,15 +796,34 @@ class EJ_adverts
 							<div id="advert_message"></div>
 						</div>
 						<div id="addRight">
-							<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.$advert['EJ_advertTitle'].'" /><br/>
-							<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" value="'.$advert['EJ_advertTag'].'" /><br/>
+							<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.str_replace('"',"&quot;", $advert['EJ_advertTitle']).'" /><br/>
+							<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" value="'.str_replace('"',"&quot;", $advert['EJ_advertTag']).'" /><br/>
 							<strong>advert Description:</strong><br/>
 							<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", $advert['EJ_advertText']).'</textarea><br/>
-							<strong>Category:</strong><br/>
-							<select name="cat" id="cat">
-								<option value="NONE" selected="selected">Please Select...</option>';
+							<strong>Categories:</strong><br/>';
 			$this->EJ_mysql->query("SELECT catId, subCatOf, catName, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats2 WHERE cats2.catId = cats1.subCatOf) AS parent FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats1 ORDER BY parent ASC, catName ASC");
+			$cats = explode(":", $advert['EJ_advertCat']);
+			$parent = "";
 			while ($cat = $this->EJ_mysql->getRow())
+			{
+				if ($cat['parent']!=$parent)
+				{
+					$parent = $cat['parent'];
+					$content .= "<br/>
+								<em>".$parent."</em>&gt;<br/>";
+				}
+				$checked = "";
+				foreach ($cats as $c)
+				{
+					if ($c == "(".$cat['catId'].")")
+					{
+						$checked = " checked=\"checked\"";
+					}
+				}
+				$content .= "
+								<span style=\"width: 240px; display:inline-block;\"><input type=\"checkbox\" name=\"cat\" id=\"cat{$cat['catId']}\" value=\"{$cat['catId']}\"$checked /> <label for=\"cat{$cat['catId']}\">{$cat['catName']}</label></span>";
+			}
+			/*while ($cat = $this->EJ_mysql->getRow())
 			{
 				if ($advert['EJ_advertCat']==$cat['catId'])
 				{
@@ -793,8 +842,9 @@ class EJ_adverts
 								<option value="'.$cat['catId'].'"'.$selected.'>'.$cat['catName'].' ('.$cat['catId'].')</option>';
 				}
 			}
+			*/
 			$content .= '
-							</select><br/><br/>
+							<br/><br/>
 							<strong>Locations:</strong><br/>';
 			$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs");
 			$locs = explode(":", $advert['EJ_advertLoc']);
@@ -809,7 +859,7 @@ class EJ_adverts
 					}
 				}
 				$content .= "
-								<span style=\"width: 200px;\"><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"$checked /> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></span>";
+								<span style=\"width: 240px; display:inline-block;\"><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"$checked /> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></span>";
 			}
 			$content .= '<br/><br/>
 								<strong>Attributes:</strong><br/>';
@@ -826,7 +876,7 @@ class EJ_adverts
 					}
 				}
 				$content .= "
-								<span style=\"width: 200px;\"><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"$checked /> <label for=\"att{$att['attId']}\">{$att['attName']}</label></span>";
+								<span style=\"width: 240px; display:inline-block;\"><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"$checked /> <label for=\"att{$att['attId']}\">{$att['attName']}</label></span>";
 			}
 			$content .= '<br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" value="'.$advert['EJ_advertAddress1'].'" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" value="'.$advert['EJ_advertAddress2'].'" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" value="'.$advert['EJ_advertAddress3'].'" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" value="'.$advert['EJ_advertAddress4'].'" /><br/><strong>Post Code:</strong><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" value="'.$advert['EJ_advertAddress5'].'" /><br/>
 								<strong>Advertiser Phone:</strong><br/><input type="text" name="phone" id="phone" maxlength="15" size="15" value="'.$advert['EJ_advertPhone'].'" /><br/>
@@ -845,6 +895,7 @@ class EJ_adverts
 			$content .= '
 							<br/><strong>Extra Info:</strong><br/><textarea name="extra" id="extra" rows="5" cols="40">'.$advert['EJ_advertExtra'].'</textarea>							
 							<br/><br/><strong>Tried and Tested:</strong> <input type="checkbox" name="tried" id="tried" value="true"'.$checked.' />
+							<br/><br/><strong>Preview Advert:</strong> <a href="../?module=EJ_adverts&action=show_advert&adId='.$advert['EJ_advertId'].'&draft=true" target="_blank" style="color:#F00">Click Here</a> (opens in new window)
 						</div>
 						<div style="clear: left;"></div>
 					</form>';
@@ -1191,7 +1242,7 @@ class EJ_adverts
 	
 	function advert_categories($showcontent = true, $forceclass = NULL)
 	{
-		$this->EJ_mysql->query("SELECT *, (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat = catId GROUP BY catId) as catCount FROM {$this->EJ_mysql->prefix}module_".get_class($this)."_cats WHERE (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat = catId GROUP BY catId) != 0 OR ISNULL(subCatOf) ORDER BY subCatOf, catName");
+		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_".get_class($this)."_cats ORDER BY subCatOf, catName");
 		$forceclass!=NULL ? $class = ' class="'.$forceclass.'"' : $class = "";
 		if ($this->EJ_mysql->numRows()==0)
 		{
@@ -1210,39 +1261,28 @@ class EJ_adverts
 					$cats[$cat['catId']]['thiscat'] = $cat;
 				}
 			}
+			foreach ($cats as $cat)
+			{
+				$query = "SELECT DISTINCT EJ_advertId FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertHidden=0 AND (EJ_advertCat LIKE '%(".$cat['thiscat']['catId'].")%'";
+				if (count($cat['subcats']) != 0) {
+					foreach ($cat['subcats'] as $subcat)
+					{
+						$query .= " OR EJ_advertCat LIKE '%(".$subcat['catId'].")%'";
+					}
+				}
+				$query .= ")";
+				$this->EJ_mysql->query($query);
+				$cats[$cat['thiscat']['catId']]['thiscat']['catCount'] += $this->EJ_mysql->numRows();
+			}
 			$count = 0;
 			foreach ($cats as $cat)
 			{
-				if ($count==4)
-				{
-					$count = 1;
-					$content .= '<div style="clear:left;"></div>';
-				}
-				else
-				{
-					$count++;
-				}
 				$content .= '
 					<li'.$class;
 					if ($class=="") $content.=' style="float:left; margin-bottom: 10px; width: 23%;"';
 					$content.= '><a href="?module='.get_class($this).'&action=show_ads&category='.$cat['thiscat']['catId'].'">'.$cat['thiscat']['catName'].'</a> ('.$cat['thiscat']['catCount'].')';
-				if (!empty($cat['subcats']) and count($cat['subcats']!=0))
-				{
-					$content .= '
-						<ul>';
-					foreach ($cat['subcats'] as $subcat)
-					{
-						$content .= '
-							<li'.$class.'><a href="?module='.get_class($this).'&action=show_ads&category='.$subcat['catId'].'">'.$subcat['catName'].'</a>';
-							if ($showcontent) $content .= ' ('.$subcat['catCount'].')';
-							$content.= '</li>';
-					}
-					$content .= '
-						</ul>';
-				}
 				$content .= '</li>';
 			}
-			$content .= '<div style="clear: left;"></div>';
 		}
 		echo $content;
 	}
@@ -1261,7 +1301,7 @@ class EJ_adverts
 				<p>
 					<strong>Category:</strong><br/><select name=\"category\" id=\"category\">
 						<option value=\"0\">Any Category</option>";
-		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat = catId GROUP BY catId) != 0 ORDER BY catName");
+		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat LIKE CONCAT('%(',catId,')%') AND ISNULL(subCatOf) GROUP BY catId) != 0 ORDER BY catName");
 		while ($cat = $this->EJ_mysql->getRow())
 		{
 			if ($this->vars['category']==$cat['catId'])
@@ -1274,13 +1314,51 @@ class EJ_adverts
 		$filter .= "
 					</select>
 				</p>
+				<p><strong>Location:</strong><br/>";
+		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs ORDER BY locName");
+		$filter .= '<select name="loc[]" id="loc" onchange="updateAdvertFilter(\''.$_SESSION['key'].'\',\''.$this->EJ_settings['instloc'].'\')" style="width:190px;">';
+		$filter .= '<option value="ANY" selected="selected">Any Location</option>';
+		while ($loc = $this->EJ_mysql->getRow())
+		{
+			if (isset($search['EJ_advertLoc']) or (isset($this->vars['loc']) and count($this->vars['loc'])==1 and $this->vars['loc'][0]!=$loc['locId']))
+			{
+				$checked[$loc['locId']] = "";
+			} elseif (!isset($this->vars['loc'])) 
+			{
+				$checked[$loc['locId']] = "";
+			} else
+			{
+				if (count($this->vars['loc'])==1 and $this->vars['loc'][0]==$loc['locId'])
+				{
+					$checked[$loc['locId']] = " selected=\"selected\"";
+				} elseif (count($this->vars['loc'])!=1)
+				{
+					foreach ($this->vars['loc'] as $locid)
+					{
+						if ($locid == $loc['locId'])
+						{
+							$checked[$loc['locId']] = " selected=\"selected\"";
+						}
+					}
+				}
+			}
+			if (!empty($advertlocs))
+			{
+				foreach ($advertlocs as $adloc)
+				{
+					$selected = "";
+					if ($adloc == $loc['locId']) $checked[$loc['locId']] = ' selected="selected"';
+				}
+			}
+			$filter .= "<option value=\"{$loc['locId']}\"{$checked[$loc['locId']]}>{$loc['locName']}</option>";
+		}
+		$filter .= "</select></p>
 				<p>
 					<strong>Name/Text Search:</strong><input type=\"text\" name=\"search_text\" id=\"search_text\" value=\"{$this->vars['search_text']}\" />
 				</p>";
-		
-		/*
+				/*
 		$filter .= "
-				<strong>Locations:</strong>";
+				<strong>Location:</strong>";
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs ORDER BY locName");
 		while ($loc = $this->EJ_mysql->getRow())
 		{
@@ -1345,13 +1423,17 @@ class EJ_adverts
 		$filter .= "
 				<input type=\"hidden\" name=\"page\" id=\"page\" value=\"".$page."\" />
 				<p>
-					<strong>Category:</strong><select name=\"category\" id=\"category\" onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}');\">
+					<strong>Category:</strong><select name=\"category\" id=\"category\" onchange=\"update_subcats(this.value,'{$this->EJ_settings['instloc']}', '{$_SESSION['key']}'); updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}');\">
 						<option value=\"0\">Any Category</option>";
-		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat = catId GROUP BY catId) != 0 ORDER BY catName");
+		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat LIKE CONCAT('%(',catId,')%') AND ISNULL(subCatOf) GROUP BY catId) != 0 ORDER BY catName");
+		$catfound=0;
 		while ($cat = $this->EJ_mysql->getRow())
 		{
 			if ($this->vars['category']==$cat['catId'])
+			{
 				$selected = " selected=\"selected\"";
+				$catfound=$cat['catId'];
+			}
 			else
 				$selected = "";
 			$filter .= "
@@ -1360,11 +1442,35 @@ class EJ_adverts
 		$filter .= "
 					</select>
 				</p>
+				<p id=\"subcat\" style=\"display:none;\">
+					<strong>Sub-Category:</strong><select name=\"subcategory\" id=\"subcategory\" onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}');\">
+						<option value=\"0\">Any Sub-Category</option>";
+		if (!empty($catfound))
+		{
+			$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE subCatOf = $catfound AND (SELECT COUNT(*) FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertCat LIKE CONCAT('%(',catId,')%')) !=0 ORDER BY catName");
+			while ($cat = $this->EJ_mysql->getRow())
+			{
+				if ($this->vars['subcategory']==$cat['catId'])
+					$selected = " selected=\"selected\"";
+				else
+					$selected = "";
+				$filter .= "
+							<option value=\"{$cat['catId']}\"$selected>{$cat['catName']}</option>";
+			}
+		}
+		$filter .= "
+					</select>
+				</p>
+				<script>
+					document.getElementById('subcat').style.display = 'inline-block';
+				</script>
 				<p>
 					<strong>Name/Text Search:</strong><input type=\"text\" name=\"search_text\" id=\"search_text\" value=\"{$this->vars['search_text']}\" onkeyup=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}');\" />
 				</p>
-				<strong>Locations:</strong><ul>";
+				<p><strong>Location:</strong>";
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs ORDER BY locName");
+		$filter .= '<select name="loc[]" id="loc" onchange="updateAdvertFilter(\''.$_SESSION['key'].'\',\''.$this->EJ_settings['instloc'].'\')" style="width:190px;">';
+		$filter .= '<option value="ANY" selected="selected">Any Location</option>';
 		while ($loc = $this->EJ_mysql->getRow())
 		{
 			if (isset($search['EJ_advertLoc']) or (isset($this->vars['loc']) and count($this->vars['loc'])==1 and $this->vars['loc'][0]!=$loc['locId']))
@@ -1372,19 +1478,19 @@ class EJ_adverts
 				$checked[$loc['locId']] = "";
 			} elseif (!isset($this->vars['loc'])) 
 			{
-				$checked[$loc['locId']] = " checked=\"checked\"";
+				$checked[$loc['locId']] = "";
 			} else
 			{
 				if (count($this->vars['loc'])==1 and $this->vars['loc'][0]==$loc['locId'])
 				{
-					$checked[$loc['locId']] = " checked=\"checked\"";
+					$checked[$loc['locId']] = " selected=\"selected\"";
 				} elseif (count($this->vars['loc'])!=1)
 				{
 					foreach ($this->vars['loc'] as $locid)
 					{
 						if ($locid == $loc['locId'])
 						{
-							$checked[$loc['locId']] = " checked=\"checked\"";
+							$checked[$loc['locId']] = " selected=\"selected\"";
 						}
 					}
 				}
@@ -1394,34 +1500,51 @@ class EJ_adverts
 				foreach ($advertlocs as $adloc)
 				{
 					$selected = "";
-					if ($adloc == $loc['locId']) $checked[$loc['locId']] = ' checked="checked"';
+					if ($adloc == $loc['locId']) $checked[$loc['locId']] = ' selected="selected"';
 				}
 			}
-			$filter .= "<li><input type=\"checkbox\" name=\"loc[]\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"{$checked[$loc['locId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></li>";
+			$filter .= "<option value=\"{$loc['locId']}\"{$checked[$loc['locId']]}>{$loc['locName']}</option>";
 		}
-		$filter .= "</ul>
-		<strong>Attributes:</strong><ul>";
+		$filter .= "</select></p>
+		<p><strong>Attribute:</strong>";
 		$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_atts ORDER BY attName");
+		$filter .= '<select name="att[]" id="att" onchange="updateAdvertFilter(\''.$_SESSION['key'].'\',\''.$this->EJ_settings['instloc'].'\')" style="width:190px;">';
+		$filter .= '<option value="ANY" selected="selected">Any Attribute</option>';
 		while ($att = $this->EJ_mysql->getRow())
 		{
-			if (isset($search['EJ_advertAttributes']))
+			if (isset($search['EJ_advertAttributes']) or (isset($this->vars['att']) and count($this->vars['att'])==1 and $this->vars['att'][0]!=$att['attId']))
+			{
+				$checked[$att['attId']] = "";
+			} elseif (!isset($this->vars['att'])) 
 			{
 				$checked[$att['attId']] = "";
 			} else
 			{
-				$checked[$att['attId']] = " checked=\"checked\"";
+				if (count($this->vars['att'])==1 and $this->vars['att'][0]==$att['attId'])
+				{
+					$checked[$att['attId']] = " selected=\"selected\"";
+				} elseif (count($this->vars['att'])!=1)
+				{
+					foreach ($this->vars['att'] as $locid)
+					{
+						if ($attid == $att['attId'])
+						{
+							$checked[$att['attId']] = " selected=\"selected\"";
+						}
+					}
+				}
 			}
 			if (!empty($advertatts))
 			{
 				foreach ($advertatts as $adatt)
 				{
 					$selected = "";
-					if ($adatt == $att['attId']) $checked[$att['attId']] = ' checked="checked"';
+					if ($adatt == $att['attId']) $checked[$att['attId']] = ' selected="selected"';
 				}
 			}
-			$filter .= "<li><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"{$checked[$att['attId']]} onchange=\"updateAdvertFilter('{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\"/> <label for=\"att{$att['attId']}\">{$att['attName']}</label></li>";
+			$filter .= "<option value=\"{$att['attId']}\"{$checked[$att['attId']]}>{$att['attName']}</option>";
 		}
-		$filter .= "</ul>
+		$filter .= "</select></p>
 				<noscript>
 				<p>
 					<input type=\"submit\" name=\"update\" id=\"update\" value=\"Update\" />
@@ -1430,18 +1553,29 @@ class EJ_adverts
 			</form></div>";
 		$locfind = "SELECT locName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs WHERE locID = SUBSTRING_INDEX(SUBSTR(EJ_advertLoc,2),')',1)";
 		$query = "SELECT SQL_CALC_FOUND_ROWS *, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = EJ_advertCat) as catName, ($locfind) as locName FROM {$this->EJ_mysql->prefix}module_".get_class($this)." WHERE EJ_advertHidden = 0";
-		if (isset($this->vars['category']) and $this->vars['category']!="0")
+		if (isset($this->vars['category']) and $this->vars['category']!="0" and empty($this->vars['subcategory']))
 		{
 			$this->EJ_mysql->query("SELECT catId FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = {$this->vars['category']} OR subCatOf = {$this->vars['category']}");
-			$query .= " and (";
+			$query .= " AND (";
 			while ($catid = $this->EJ_mysql->getRow())
 			{
-				$query .= "EJ_advertCat = '{$catid['catId']}' OR ";
+				$query .= "EJ_advertCat LIKE '%({$catid['catId']})%' OR ";
 			}
 			$query = substr($query,0,-4);
 			$query .= ")";
 		}
-		if (isset($this->vars['loc']))
+		if (isset($this->vars['subcategory']) and $this->vars['subcategory']!="0")
+		{
+			$this->EJ_mysql->query("SELECT catId FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = {$this->vars['subcategory']}");
+			$query .= " AND (";
+			while ($catid = $this->EJ_mysql->getRow())
+			{
+				$query .= "EJ_advertCat LIKE '%({$catid['catId']})%' OR ";
+			}
+			$query = substr($query,0,-4);
+			$query .= ")";
+		}
+		if (isset($this->vars['loc']) and $this->vars['loc'][0]!='ANY')
 		{
 			$query .= " and (";
 			foreach ($this->vars['loc'] as $loc)
@@ -1451,9 +1585,29 @@ class EJ_adverts
 			$query = substr($query,0,-4);
 			$query .= ")";
 		}
-		if (isset($this->vars['search_text']))
+		if (isset($this->vars['att']) and $this->vars['att'][0] != 'ANY')
 		{
-			$query .= " and (EJ_advertTitle LIKE '%{$this->vars['search_text']}%' or EJ_advertText LIKE '%{$this->vars['search_text']}%')";
+			$query .= " and (";
+			foreach ($this->vars['att'] as $att)
+			{
+				$query .= "EJ_advertAttributes LIKE '%($att)%' OR ";
+			}
+			$query = substr($query,0,-4);
+			$query .= ")";
+		}
+		if (!empty($this->vars['search_text']))
+		{
+			$words = explode(" ", $this->vars['search_text']);
+			$query .= " AND (";
+			foreach($words as $word)
+			{
+				if (!empty($word))
+				{
+					$query .= "(EJ_advertText LIKE '%$word%' OR EJ_advertTitle LIKE '%$word%') AND ";
+				}
+			}
+			$query = substr($query, 0, -5).")";
+			$adverttext = " value=\"$value\"";
 		}
 		$query .= " ORDER BY ";
 		switch ($_REQUEST['order'])
@@ -1489,10 +1643,10 @@ class EJ_adverts
 					$image = "<img class=\"EJ_advertResult_img\" src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=100&amp;width=100\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 				}
 				if ($advert['EJ_advertTried']==1)
-					$tried = " <img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em;\" />";
+					$tried = " <a href=\"category/news\"><img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em; border:0;\" /></a>";
 				else
 					$tried = "";
-				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a>$tried</div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr($advert['EJ_advertText'],0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
+				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a>$tried</div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr(str_replace(array("<br>","<br/>","<br />","\n","\r")," ", $advert['EJ_advertText']),0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
 			}
 		}
 		$this->EJ_mysql->query("SELECT FOUND_ROWS() as results");
@@ -1506,13 +1660,24 @@ class EJ_adverts
 			{
 				$selected = "<strong>";
 				$endselected = "</strong> | ";
+				$pages .= $selected.$i.$endselected;
 			}
-			else
+			elseif (($i>($page-3) and $i<($page+3)) or $i == 1 or $i == ceil($result['results']/10))
 			{
-				$selected = "<a href=\"javascript: setPage($i,'{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\">";
-				$endselected = "</a> | ";
+				if ($i == ceil($result['results']/10) and $i>($page+3)) {
+					$startselected = ".. ";
+					$pages = substr($pages,0,-2);
+				} else {
+					$startselected = "";
+				}
+				$selected = $startselected."<a href=\"javascript: setPage($i,'{$_SESSION['key']}','{$this->EJ_settings['instloc']}')\">";
+				if ($i == 1 and $i<($page-3)) {
+					$endselected = "</a> .. ";
+				} else {
+					$endselected = "</a> | ";
+				}
+				$pages .= $selected.$i.$endselected;
 			}
-			$pages .= $selected.$i.$endselected;
 		}
 		$pages = substr($pages,0,-3);
 		if ($pages=="")
@@ -1541,7 +1706,7 @@ class EJ_adverts
 			} else
 			{
 				$advert = $this->EJ_mysql->getRow();
-				if ($advert['EJ_advertHidden']==1)
+				if ($advert['EJ_advertHidden']==1 and $this->vars['draft']!=true)
 				{
 					$content .= '<p style="text-align: center;"><strong>Listing Not Approved!<br/>Please go back and try again or contact us for more details.</strong></p>';
 				}
@@ -1557,7 +1722,7 @@ class EJ_adverts
 						$this->EJ_mysql->query("UPDATE {$this->EJ_mysql->prefix}module_EJ_adverts_hits SET hits = hits + 1 WHERE adId = '{$advert['EJ_advertId']}' and hitMonth = '".date("my")."'");
 					}
 					if ($advert['EJ_advertTried']==1)
-					$tried = " <img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em;\" />";
+					$tried = " <a href=\"category/news\"><img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em; border:0;\" /></a>";
 				else
 					$tried = "";
 					$content .= "<div class=\"EJ_advertResult_header\">{$advert['EJ_advertTitle']}$tried</div><div id=\"EJ_advertResult_right\"><div id=\"EJ_advertResult_address\"><strong>{$advert['EJ_advertTitle']}</strong><br/>{$advert['EJ_advertAddress1']}<br/>{$advert['EJ_advertAddress2']}";
@@ -1618,7 +1783,7 @@ class EJ_adverts
 					$content .= $form."</div>";
 					if (!empty($advert['EJ_advertExtra']))
 					{
-						$extra = "<div id=\"EJ_advertResult_extra\">".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText'])."</div>";
+						$extra = "<div id=\"EJ_advertResult_extra\">".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertExtra'])."</div>";
 					}
 					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><div style=\"margin-bottom: 10px; font-weight: bold;\">{$advert['EJ_advertTag']}</div>".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText']).$extra;
 					$content .= "</div><div id=\"EJ_advertResult_mainRight\">";
@@ -1635,9 +1800,9 @@ class EJ_adverts
 					{
 						$dir = opendir($imgdir);
 						$i=0;
-						while(($file = readdir($dir)) !== false and $i < 6)
+						while(($file = readdir($dir)) !== false and $i < 12)
 						{
-							if (substr($file,-4)=='.jpg' or substr($file,-4)=='.gif' or substr($file,-4)=='.png')
+							if (substr($file,-4)=='.jpg' or substr($file,-4)=='.gif' or substr($file,-4)=='.png' or substr($file,-4)=='.JPG' or substr($file,-4)=='.GIF' or substr($file,-4)=='.PNG')
 							{
 								if ($i==0)
 									$content.= '<div style="display: table; margin: 5px auto; text-align: center;">';
@@ -1701,7 +1866,7 @@ class EJ_adverts
 			{
 				$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 			}
-			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear: left;\"></div></div>";
+			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear: left;\"></div></div>";
 			$count ++;
 		}
 		if ($count < 5)
@@ -1721,7 +1886,7 @@ class EJ_adverts
 				{
 					$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 				}
-				$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear:left; \"></div></div>";
+				$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear:left; \"></div></div>";
 			}
 		}
 		echo $content;
@@ -1743,7 +1908,7 @@ class EJ_adverts
 			{
 				$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"{$advert['EJ_advertTitle']}\"/>";
 			}
-			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div>".str_replace(array('<br>','<br/>','<br />', "\n")," ",substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a><div style=\"clear: left;\"></div></div>";
+			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array('<br>','<br/>','<br />', "\n")," ",substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear: left;\"></div></div>";
 		}
 		echo $content;
 	}
@@ -1773,7 +1938,7 @@ class EJ_adverts
 							<div id="addLeft">
 								Click Image To Change<br/>
 								<img id="advertimage" src="'.$this->moduleloc.'images/'.$img.'" alt="Change Image" title="Click to Change Image" onclick="changepic('.$advert['EJ_advertId'].')"  style="width:200px; height:200px;" /><br/>
-								<input type="hidden" name="image" id="image" value="'.$img.'" />
+								<input type="hidden" name="image" id="image" value="'.$advert['EJ_advertImages'].'" />
 								<input type="button" name="save" id="save" value="Save Changes" onclick="saveadvertprofile(\''.$_SESSION['key'].'\','.$advert['EJ_advertId'].')"/><br/>
 								<input type="button" name="cancel" id="cancel" value="Cancel Changes" onclick="document.location=\'profile.php\'"/>';
 				$this->EJ_mysql->query("SELECT hits FROM {$this->EJ_mysql->prefix}module_EJ_adverts_hits WHERE adId = '{$advert['EJ_advertId']}' and hitMonth = '".date("my")."'");
@@ -1827,72 +1992,14 @@ class EJ_adverts
 								<div id="advert_message"></div>
 							</div>
 							<div id="addRight">
-								<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.$advert['EJ_advertTitle'].'" /><br/>
-								<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" value="'.$advert['EJ_advertTag'].'" /><br/>
+								<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.str_replace('"',"&quot;", $advert['EJ_advertTitle']).'" /><br/>
+								<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" value="'.str_replace('"',"&quot;", $advert['EJ_advertTag']).'" /><br/>
 								<strong>Advert Description:</strong><br/>
-								<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", $advert['EJ_advertText']).'</textarea><br/>
-								<strong>Category:</strong><br/>
-								<select name="cat" id="cat">
-									<option value="NONE" selected="selected">Please Select...</option>';
-				$this->EJ_mysql->query("SELECT catId, subCatOf, catName, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats2 WHERE cats2.catId = cats1.subCatOf) AS parent FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats1 ORDER BY parent ASC, catName ASC");
-				while ($cat = $this->EJ_mysql->getRow())
-				{
-					if ($advert['EJ_advertCat']==$cat['catId'])
-					{
-						$selected = " selected=\"selected\"";
-					} else
-					{
-						$selected = "";
-					}
-					if (!empty($cat['parent']))
-					{
-					$content .= '
-									<option value="'.$cat['catId'].'"'.$selected.'>'.$cat['parent'].'&gt;'.$cat['catName'].' ('.$cat['subCatOf'].'&gt;'.$cat['catId'].')</option>';
-					} else
-					{
-						$content .= '
-									<option value="'.$cat['catId'].'"'.$selected.'>'.$cat['catName'].' ('.$cat['catId'].')</option>';
-					}
-				}
-				$content .= '
-								</select><br/><br/>
-								<strong>Locations:</strong><br/>';
-				$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_locs");
-				$locs = explode(":", $advert['EJ_advertLoc']);
-				while ($loc = $this->EJ_mysql->getRow())
-				{
-					$checked = "";
-					foreach ($locs as $l)
-					{
-						if ($l == "(".$loc['locId'].")")
-						{
-							$checked = " checked=\"checked\"";
-						}
-					}
-					$content .= "
-									<span style=\"width: 200px;\"><input type=\"checkbox\" name=\"loc\" id=\"loc{$loc['locId']}\" value=\"{$loc['locId']}\"$checked /> <label for=\"loc{$loc['locId']}\">{$loc['locName']}</label></span>";
-				}
-				$content .= '<br/><br/>
-									<strong>Attributes:</strong><br/>';
-				$this->EJ_mysql->query("SELECT * FROM {$this->EJ_mysql->prefix}module_EJ_adverts_atts");
-				$atts = explode(":", $advert['EJ_advertAttributes']);
-				while ($att = $this->EJ_mysql->getRow())
-				{
-					$checked = "";
-					foreach ($atts as $a)
-					{
-						if ($a == "(".$att['attId'].")")
-						{
-							$checked = " checked=\"checked\"";
-						}
-					}
-					$content .= "
-									<span style=\"width: 200px;\"><input type=\"checkbox\" name=\"att\" id=\"att{$att['attId']}\" value=\"{$att['attId']}\"$checked /> <label for=\"att{$att['attId']}\">{$att['attName']}</label></span>";
-				}
-				$content .= '<br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" value="'.$advert['EJ_advertAddress1'].'" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" value="'.$advert['EJ_advertAddress2'].'" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" value="'.$advert['EJ_advertAddress3'].'" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" value="'.$advert['EJ_advertAddress4'].'" /><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" value="'.$advert['EJ_advertAddress5'].'" /><br/>
+								<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", $advert['EJ_advertText']).'</textarea><br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" value="'.$advert['EJ_advertAddress1'].'" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" value="'.$advert['EJ_advertAddress2'].'" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" value="'.$advert['EJ_advertAddress3'].'" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" value="'.$advert['EJ_advertAddress4'].'" /><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" value="'.$advert['EJ_advertAddress5'].'" /><br/>
 									<strong>Advertiser Phone:</strong><br/><input type="text" name="phone" id="phone" maxlength="15" size="15" value="'.$advert['EJ_advertPhone'].'" /><br/>
 									<strong>Contact Email:</strong><br/><input type="text" name="contact" id="contact" maxlength="150" size="40" value="'.$advert['EJ_advertContact'].'" /><br/>
-									<strong>Advertiser Website:</strong> (incl. http://)<br/><input type="text" name="website" id="website" maxlength="150" size="40" value="'.$advert['EJ_advertWebsite'].'" />';
+									<strong>Advertiser Website:</strong> (incl. http://)<br/><input type="text" name="website" id="website" maxlength="150" size="40" value="'.$advert['EJ_advertWebsite'].'" />
+									<br/><strong>Extra Info:</strong><br/><textarea name="extra" id="extra" rows="5" cols="40">'.$advert['EJ_advertExtra'].'</textarea>';
 				$content .= '
 							</div>
 							<div style="clear: both;"></div>
@@ -2057,6 +2164,42 @@ class EJ_adverts
 			{
 				$content .= '
 					<li><a href="?module='.get_class($this).'&action=show_ads&category='.$cat['catId'].'">'.$cat['catName'].'</a></li>';
+			}
+		}
+		echo $content;
+	}
+	
+	function advert_locs()
+	{
+		$this->EJ_mysql->query("SELECT locId, locName FROM {$this->EJ_mysql->prefix}module_".get_class($this)."_locs ORDER BY locName");
+		if ($this->EJ_mysql->numRows()==0)
+		{
+			$content .= '
+				<li> No Locations Found!</li>';
+		} else
+		{
+			while ($loc = $this->EJ_mysql->getRow())
+			{
+				$content .= '
+					<li><a href="?module='.get_class($this).'&action=show_ads&loc[]='.$loc['locId'].'">'.$loc['locName'].'</a></li>';
+			}
+		}
+		echo $content;
+	}
+	
+	function advert_atts()
+	{
+		$this->EJ_mysql->query("SELECT attId, attName FROM {$this->EJ_mysql->prefix}module_".get_class($this)."_atts ORDER BY attName");
+		if ($this->EJ_mysql->numRows()==0)
+		{
+			$content .= '
+				<li> No Attributes Found!</li>';
+		} else
+		{
+			while ($att = $this->EJ_mysql->getRow())
+			{
+				$content .= '
+					<li><a href="?module='.get_class($this).'&action=show_ads&att[]='.$att['attId'].'">'.$att['attName'].'</a></li>';
 			}
 		}
 		echo $content;
