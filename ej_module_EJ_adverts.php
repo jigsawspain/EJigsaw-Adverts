@@ -10,7 +10,7 @@ if (!class_exists("EJ_adverts"))
 {
 class EJ_adverts
 {
-	public $version = "0.4.2";
+	public $version = "0.4.3";
 	public $creator = "Jigsaw Spain";
 	public $name = "EJigsaw Adverts";
 	private $EJ_mysql;
@@ -317,7 +317,7 @@ class EJ_adverts
 						{
 							if (!empty($word))
 							{
-								$query .= "(EJ_advertText LIKE '%$word%' OR EJ_advertTitle LIKE '%$word%') AND ";
+								$query .= "(EJ_advertText LIKE '%$word%' OR EJ_advertTitle LIKE '%".addslashes($word)."%') AND ";
 							}
 						}
 						$query = substr($query, 0, -5).")";
@@ -547,7 +547,7 @@ class EJ_adverts
 				<div class=\"advert_result\" id=\"{$advert['EJ_advertId']}\">
 					<div style=\"float: right;\"><img src=\"".$this->moduleloc."recycle.png\" alt=\"delete\" title=\"Delete advert\" style=\"cursor: pointer; border: 0;\" onclick=\"deleteadvert('{$advert['EJ_advertId']}', '{$_SESSION['key']}')\" /> <a href=\"?module=EJ_adverts&action=editadvert&advertid={$advert['EJ_advertId']}\"><img src=\"".$this->moduleloc."edit.png\" alt=\"edit\" title=\"Edit advert\" style=\"cursor: pointer; border: 0;\" /></a> <img src=\"".$this->moduleloc."blue_down.png\" alt=\"show/hide details\" title=\"Show/Hide Details\"style=\"cursor: pointer;\" onclick=\"Slide(this.parentNode.parentNode, 16, 150)\" /></div>
 					<p><strong>".stripslashes($advert['EJ_advertTitle'])."</strong> posted by: {$advert['EJ_advertPoster']} - <strong>Renewal:</strong> $date</p>
-					<p><img src=\"{$this->moduleloc}images/$img\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\" class=\"advertImage\" />{$advert['EJ_advertText']}</p>
+					<p><img src=\"{$this->moduleloc}images/$img\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\" class=\"advertImage\" />".stripslashes($advert['EJ_advertText'])."</p>
 				</div>";
 		}
 		$content3 .= '
@@ -799,7 +799,7 @@ class EJ_adverts
 							<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.str_replace('"',"&quot;", stripslashes($advert['EJ_advertTitle'])).'" /><br/>
 							<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" value="'.str_replace('"',"&quot;", $advert['EJ_advertTag']).'" /><br/>
 							<strong>advert Description:</strong><br/>
-							<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", $advert['EJ_advertText']).'</textarea><br/>
+							<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", stripslashes($advert['EJ_advertText'])).'</textarea><br/>
 							<strong>Categories:</strong><br/>';
 			$this->EJ_mysql->query("SELECT catId, subCatOf, catName, (SELECT catName FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats2 WHERE cats2.catId = cats1.subCatOf) AS parent FROM {$this->EJ_mysql->prefix}module_EJ_adverts_cats cats1 ORDER BY parent ASC, catName ASC");
 			$cats = explode(":", $advert['EJ_advertCat']);
@@ -1646,7 +1646,7 @@ class EJ_adverts
 					$tried = " <a href=\"category/news\"><img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}tried.png\" style=\"vertical-align: middle; margin-bottom: 0.3em; border:0;\" /></a>";
 				else
 					$tried = "";
-				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a>$tried</div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr(str_replace(array("<br>","<br/>","<br />","\n","\r")," ", $advert['EJ_advertText']),0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
+				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a>$tried</div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr(str_replace(array("<br>","<br/>","<br />","\n","\r")," ", stripslashes($advert['EJ_advertText'])),0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
 			}
 		}
 		$this->EJ_mysql->query("SELECT FOUND_ROWS() as results");
@@ -1813,7 +1813,7 @@ class EJ_adverts
 					{
 						$extra = "<div id=\"EJ_advertResult_extra\">".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertExtra'])."</div>";
 					}
-					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><div style=\"margin-bottom: 10px; font-weight: bold;\">{$advert['EJ_advertTag']}</div>".str_replace(array('£','%u2019'), array('&pound;',"'"), $advert['EJ_advertText']).$extra;
+					$content .= "<div id=\"EJ_advertResult_left\"><div id=\"EJ_advertResult_mainLeft\"><div style=\"margin-bottom: 10px; font-weight: bold;\">{$advert['EJ_advertTag']}</div>".str_replace(array('£','%u2019'), array('&pound;',"'"), stripslashes($advert['EJ_advertText'])).$extra;
 					$content .= "</div><div id=\"EJ_advertResult_mainRight\">";
 					if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}"))
 					{
@@ -1894,7 +1894,7 @@ class EJ_adverts
 			{
 				$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\"/>";
 			}
-			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear: left;\"></div></div>";
+			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr(stripslashes($advert['EJ_advertText']),0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear: left;\"></div></div>";
 			$count ++;
 		}
 		if ($count < 5)
@@ -1914,7 +1914,7 @@ class EJ_adverts
 				{
 					$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\"/>";
 				}
-				$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear:left; \"></div></div>";
+				$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array("<br />", "<br>","<br/>", "\n")," ", substr(stripslashes($advert['EJ_advertText']),0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear:left; \"></div></div>";
 			}
 		}
 		echo $content;
@@ -1936,7 +1936,7 @@ class EJ_adverts
 			{
 				$image = "<img src=\"{$this->EJ_settings['instloc']}{$this->moduleloc}image.php/noimage.png?image={$this->EJ_settings['instloc']}{$this->moduleloc}images/noimage.png&amp;height=60&amp;width=80\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\"/>";
 			}
-			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array('<br>','<br/>','<br />', "\n")," ",substr($advert['EJ_advertText'],0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear: left;\"></div></div>";
+			$content .= "<div class=\"EJ_advertPopular\" id=\"{$advert['EJ_advertId']}\"><div class=\"header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div style=\"float: left; margin-right: 5px;\"><div class=\"EJ_advertPopularImageHolder\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a></div></div><p>".str_replace(array('<br>','<br/>','<br />', "\n")," ",substr(stripslashes($advert['EJ_advertText']),0,150))."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></p><div style=\"clear: left;\"></div></div>";
 		}
 		echo $content;
 	}
@@ -2023,7 +2023,7 @@ class EJ_adverts
 								<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.str_replace('"',"&quot;", stripslashes($advert['EJ_advertTitle'])).'" /><br/>
 								<strong>Tag Line:</strong><br/><input type="text" name="tag" id="tag" maxlength="150" size="40" value="'.str_replace('"',"&quot;", $advert['EJ_advertTag']).'" /><br/>
 								<strong>Advert Description:</strong><br/>
-								<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", $advert['EJ_advertText']).'</textarea><br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" value="'.$advert['EJ_advertAddress1'].'" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" value="'.$advert['EJ_advertAddress2'].'" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" value="'.$advert['EJ_advertAddress3'].'" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" value="'.$advert['EJ_advertAddress4'].'" /><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" value="'.$advert['EJ_advertAddress5'].'" /><br/>
+								<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", stripslashes($advert['EJ_advertText'])).'</textarea><br/><br/><strong>Advertiser Address:</strong><br/><input type="text" name="address1" id="address1" maxlength="150" size="40" value="'.$advert['EJ_advertAddress1'].'" /><br/><input type="text" name="address2" id="address2" maxlength="150" size="40" value="'.$advert['EJ_advertAddress2'].'" /><br/><input type="text" name="address3" id="address3" maxlength="150" size="40" value="'.$advert['EJ_advertAddress3'].'" /><br/><input type="text" name="address4" id="address4" maxlength="150" size="40" value="'.$advert['EJ_advertAddress4'].'" /><br/><input type="text" name="address5" id="address5" maxlength="100" size="40" value="'.$advert['EJ_advertAddress5'].'" /><br/>
 									<strong>Advertiser Phone:</strong><br/><input type="text" name="phone" id="phone" maxlength="15" size="15" value="'.$advert['EJ_advertPhone'].'" /><br/>
 									<strong>Contact Email:</strong><br/><input type="text" name="contact" id="contact" maxlength="150" size="40" value="'.$advert['EJ_advertContact'].'" /><br/>
 									<strong>Advertiser Website:</strong> (incl. http://)<br/><input type="text" name="website" id="website" maxlength="150" size="40" value="'.$advert['EJ_advertWebsite'].'" />
@@ -2104,7 +2104,7 @@ class EJ_adverts
 							<div id="addRight">
 								<strong>Advert Title:</strong><br/><input type="text" name="title" id="title" maxlength="100" size="40" value="'.stripslashes($advert['EJ_advertTitle']).'" /><br/>
 								<strong>Advert Description:</strong><br/>
-								<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", $advert['EJ_advertText']).'</textarea><br/>
+								<textarea name="desc" id="desc" rows="5" cols="40" />'.str_replace(array("<br/>","<br />"), "\n", stripslashes($advert['EJ_advertText'])).'</textarea><br/>
 								<strong>Category:</strong><br/>
 								<select name="cat" id="cat">
 									<option value="NONE" selected="selected">Please Select...</option>';
