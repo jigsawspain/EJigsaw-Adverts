@@ -1,9 +1,10 @@
 <?php 
+// For EJ_adverts
+// Since 0.4.3
 session_start();
 if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 {
 	echo "<p class=\"EJ_user_error\"><strong>AUTHORISATION ERROR</strong>: Unable to verify key!</p>";
-	echo "<p>{$_SESSION['key']}::{$_POST['key']}</p>";
 } else
 {
 	$EJ_initPage ='ajax';
@@ -12,43 +13,58 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 	$query="SELECT SQL_CALC_FOUND_ROWS *, (SELECT catName FROM {$EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = EJ_advertCat) as catName, ($locfind) as locName FROM {$EJ_mysql->prefix}module_EJ_adverts WHERE EJ_advertHidden = 0";
 	if (!empty($_POST['text']))
 	{
-		$query .= " AND (EJ_advertTitle LIKE '%{$_POST['text']}%' OR EJ_advertText LIKE '%{$_POST['text']}%')";
+		$words = explode(" ", $_POST['text']);
+		$query .= " AND (";
+		foreach($words as $word)
+		{
+			if (!empty($word))
+			{
+				$query .= "(EJ_advertText LIKE '%$word%' OR EJ_advertTitle LIKE '%".addslashes($word)."%') AND ";
+			}
+		}
+		$query = substr($query, 0, -5).")";
 	}
-	if (!empty($_POST['cat']))
+	if (!empty($_POST['cat']) and empty($_POST['subcat']))
 	{
-		$query .= " AND EJ_advertCat = ".$_POST['cat'];
+		$EJ_mysql->query("SELECT catId FROM {$EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = {$_POST['cat']} OR subCatOf = {$_POST['cat']}");
+		$query .= " AND (";
+		while ($catid = $EJ_mysql->getRow())
+		{
+			$query .= "EJ_advertCat LIKE '%({$catid['catId']})%' OR ";
+		}
+		$query = substr($query,0,-4);
+		$query .= ")";
+	}
+	if (!empty($_POST['subcat']))
+	{
+		$EJ_mysql->query("SELECT catId FROM {$EJ_mysql->prefix}module_EJ_adverts_cats WHERE catId = {$_POST['subcat']}");
+		$query .= " AND (";
+		while ($catid = $EJ_mysql->getRow())
+		{
+			$query .= "EJ_advertCat LIKE '%({$catid['catId']})%' OR ";
+		}
+		$query = substr($query,0,-4);
+		$query .= ")";
 	}
 	if (!empty($_POST['attributes']))
 	{
-		$advertatts = explode(":",$_POST['attributes']);
+		$att = $_POST['attributes'];
 		$skip = 1;
-		$query .= " AND (";
-		$i=0;
-		foreach ($advertatts as $att)
+		if (!empty($att))
 		{
-			if ($i != 0)
-				$query .= " OR ";
-			else
-				$i=1;
+			$query .= " AND (";
 			$query .= "EJ_advertAttributes LIKE '%($att)%'";
+			$query .= ")";
 		}
-		$query .= ")";
 	}
 	if (!empty($_POST['locations']))
 	{
-		$advertlocs = explode(":",$_POST['locations']);
+		$loc = $_POST['locations'];
 		$skip = 1;
-		$query .= " AND (";
-		$i=0;
-		foreach ($advertlocs as $loc)
-		{
-			if ($i != 0)
-				$query .= " OR ";
-			else
-				$i=1;
+		if (!empty($loc))
+			$query .= " AND (";
 			$query .= "EJ_advertLoc LIKE '%($loc)%'";
-		}
-		$query .= ")";
+			$query .= ")";
 	}
 	$query .= " ORDER BY ";
 	switch ($_POST['order'])
@@ -99,12 +115,12 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 				}
 				if (!empty($advert['EJ_advertImages']) and file_exists(dirname(__FILE__)."/images/".$advert['EJ_advertId']."/".$advert['EJ_advertImages']))
 				{
-					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php/{$advert['EJ_advertImages']}?image={$EJ_settings['instloc']}modules/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}&amp;height=100&amp;width=100\" alt=\"{$EJ_advertTitle}\"/>";
+					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php/{$advert['EJ_advertImages']}?image={$EJ_settings['instloc']}modules/EJ_adverts/images/{$advert['EJ_advertId']}/{$advert['EJ_advertImages']}&amp;height=100&amp;width=100\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\"/>";
 				} else
 				{
-					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php/noimage.png?image={$EJ_settings['instloc']}modules/EJ_adverts/images/noimage.png&amp;height=100&amp;width=100\" alt=\"{$advert['EJ_advertTitle']}\"/>";
+					$image = "<img class=\"EJ_advertResult_img\" src=\"{$EJ_settings['instloc']}modules/EJ_adverts/image.php/noimage.png?image={$EJ_settings['instloc']}modules/EJ_adverts/images/noimage.png&amp;height=100&amp;width=100\" alt=\"".stripslashes($advert['EJ_advertTitle'])."\"/>";
 				}
-				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">{$advert['EJ_advertTitle']}</a></div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr($advert['EJ_advertText'],0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
+				$content .= "<div class=\"EJ_advertResult\" id=\"{$advert['EJ_advertId']}\"><div class=\"EJ_advertResult_header\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">".stripslashes($advert['EJ_advertTitle'])."</a></div><div class=\"EJ_advertResult_left\"><a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">$image</a>".substr(str_replace(array("<br>", "<br/>", "<br />", "\n", "\r")," ", stripslashes($advert['EJ_advertText'])),0,150)."... <a href=\"?module=EJ_adverts&action=show_advert&adId={$advert['EJ_advertId']}\">more</a></div><div class=\"EJ_advertResult_right\">{$advert['locName']}<br/>{$advert['catName']}<br/>{$advert['EJ_advert']}</div><div style=\"clear: left;\"></div></div>";
 			}
 		}
 	$EJ_mysql->query("SELECT FOUND_ROWS() as results");
@@ -115,13 +131,24 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 		{
 			$selected = "<strong>";
 			$endselected = "</strong> | ";
+			$pages .= $selected.$i.$endselected;
 		}
-		else
+		elseif (($i>($_POST['page']-3) and $i<($_POST['page']+3)) or $i == 1 or $i == ceil($rows['results']/$limit))
 		{
-			$selected = "<a href=\"javascript: setPage($i,'{$_SESSION['key']}','{$EJ_settings['instloc']}')\">";
-			$endselected = "</a> | ";
+			if ($i == ceil($rows['results']/$limit) and $i>($_POST['page']+3)) {
+				$startselected = ".. ";
+				$pages = substr($pages,0,-2);
+			} else {
+				$startselected = "";
+			}
+			$selected = $startselected."<a href=\"javascript: setPage($i,'{$_SESSION['key']}','{$EJ_settings['instloc']}')\">";
+			if ($i == 1 and $i<($_POST['page']-3)) {
+				$endselected = "</a> .. ";
+			} else {
+				$endselected = "</a> | ";
+			}
+			$pages .= $selected.$i.$endselected;
 		}
-		$pages .= $selected.$i.$endselected;
 	}
 	$pages = substr($pages,0,-3);
 	if ($pages=="")
