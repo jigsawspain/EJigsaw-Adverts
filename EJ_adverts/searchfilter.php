@@ -1,4 +1,6 @@
 <?php 
+// For EJ_adverts
+// Since 0.4.3
 session_start();
 if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 {
@@ -16,11 +18,20 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 	}
 	if (!empty($_POST['text']))
 	{
-		$query .= " AND (EJ_advertTitle LIKE '%{$_POST['text']}%' OR EJ_advertText LIKE '%{$_POST['text']}%')";
+		$words = explode(" ", $_POST['text']);
+		$query .= " AND (";
+		foreach($words as $word)
+		{
+			if (!empty($word))
+			{
+				$query .= "(EJ_advertText LIKE '%".addslashes($word)."%' OR EJ_advertTitle LIKE '%".addslashes($word)."%') AND ";
+			}
+		}
+		$query = substr($query, 0, -5).")";
 	}
 	if ($_POST['category']!=0)
 	{
-		$query .= " AND EJ_advertCat = ".$_POST['category'];
+		$query .= " AND EJ_advertCat LIKE '%(".$_POST['category'].")%'";
 	}
 	if ($_POST['poster']!="0")
 	{
@@ -33,7 +44,6 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 	if (!empty($_POST['attributes']))
 	{
 		$advertatts = explode(":",$_POST['attributes']);
-		$skip = 1;
 		$query .= " AND (";
 		$i=0;
 		foreach ($advertatts as $att)
@@ -49,7 +59,6 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 	if (!empty($_POST['locations']))
 	{
 		$advertlocs = explode(":",$_POST['locations']);
-		$skip = 1;
 		$query .= " AND (";
 		$i=0;
 		foreach ($advertlocs as $loc)
@@ -107,8 +116,8 @@ if ($_POST['key'] != $_SESSION['key'] or $_POST['key']=="")
 			$content .= '
 				<div class="advert_result" id="'.$result['EJ_advertId'].'">
 					<div style="float: right;"><img src="modules/EJ_adverts/recycle.png" alt="delete" title="Delete advert" style="cursor: pointer;" onclick="deleteadvert(\''.$result['EJ_advertId'].'\', \''.$_SESSION['key'].'\')" /> <a href="?module=EJ_adverts&action=editadvert&advertid='.$result['EJ_advertId'].'"><img src="modules/EJ_adverts/edit.png" alt="edit" title="Edit advert" style="cursor: pointer;" /></a> <img src="modules/EJ_adverts/blue_down.png" alt="show/hide details" title="Show/Hide Details" style="cursor: pointer;" onclick="Slide(this.parentNode.parentNode, 16, 150)" /></div>
-					<p><strong>'.$result['EJ_advertTitle'].'</strong> posted by: '.$result['EJ_advertPoster'].' - <strong>Renewal:</strong> '.$date.'</p>
-					<p><img class="advertImage" src="modules/EJ_adverts/images/'.$img.'" alt="'.$advert['EJ_advertTitle'].'" />'.$result['EJ_advertText'].'</p>
+					<p><strong>'.stripslashes($result['EJ_advertTitle']).'</strong> posted by: '.$result['EJ_advertPoster'].' - <strong>Renewal:</strong> '.$date.'</p>
+					<p><img class="advertImage" src="modules/EJ_adverts/images/'.$img.'" alt="'.stripslashes($advert['EJ_advertTitle']).'" />'.$result['EJ_advertText'].'</p>
 				</div>';
 		}
 	}
